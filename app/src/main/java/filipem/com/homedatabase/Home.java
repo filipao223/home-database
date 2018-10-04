@@ -1,12 +1,16 @@
 package filipem.com.homedatabase;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -19,8 +23,26 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity
+import java.util.ArrayList;
+import java.util.List;
+
+public class Home extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    private static final String TAG = "My home";
+    private Context context;
+
+    private com.getbase.floatingactionbutton.FloatingActionsMenu menuButtons;
+    private com.getbase.floatingactionbutton.FloatingActionButton addByHand;
+    private com.getbase.floatingactionbutton.FloatingActionButton addBarcode;
+
+    private RecyclerView recyclerViewItems;
+
+    private ItemsCardsAdapter cardsAdapter;
+
+    private Home thisHome;
+
+    private List<Item> itemList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,14 +51,19 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        /*FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        context = this;
+        thisHome = this;
+
+        menuButtons = findViewById(R.id.menu_multiple_actions);
+        addByHand = findViewById(R.id.addByHand);
+        addBarcode = findViewById(R.id.addBarcode);
+
+        addByHand.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Toast.makeText(context, "Clicked addByHand", Toast.LENGTH_LONG).show();
             }
-        });*/
+        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -48,9 +75,57 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         /*Gets camera permission*/
-        ActivityCompat.requestPermissions(MainActivity.this,
+        ActivityCompat.requestPermissions(Home.this,
                 new String[]{Manifest.permission.CAMERA},
                 1);
+
+        recyclerViewItems = findViewById(R.id.recyclerViewItems);
+        if ( recyclerViewItems != null){
+            recyclerViewItems.setHasFixedSize(true); //RecyclerView terá sempre o mesmo tamanho, performance improvement
+
+            LinearLayoutManager llm = new LinearLayoutManager(context); //Manager que gere como os cartoes aparecem na view
+            recyclerViewItems.setLayoutManager(llm);
+
+            refreshHomeItems(); //Por agora objectos FeedPost são criados à mao e colocados na lista feedPost
+
+            cardsAdapter = new ItemsCardsAdapter(itemList, thisHome); //RecyclerView adapterPosts
+            recyclerViewItems.setAdapter(cardsAdapter);
+        }
+    }
+
+    private void refreshHomeItems() {
+        Log.i(TAG, "refreshHomeItems was called");
+
+        //Clear old data
+        if (itemList != null){
+            itemList.clear();
+            Log.i(TAG, "Cleared itemslist data");
+        }
+        else itemList = new ArrayList<>();
+
+        //Fill with new data
+        Log.i(TAG, "Filling with new data");
+
+
+        itemList.add(new Item("", "Item1"));
+        itemList.add(new Item("", "Item1"));
+        itemList.add(new Item("", "Item1"));
+        itemList.add(new Item("", "Item1"));
+
+
+        Log.i(TAG, "New data added, example: " + (itemList.isEmpty()?"null":itemList.get(0).toString()));
+
+        //Create adapterPosts if null
+        if (cardsAdapter == null){
+            cardsAdapter = new ItemsCardsAdapter(itemList, thisHome);
+            Log.i(TAG, "New adapterPosts created");
+        }
+        else{
+            //Notify adapterPosts of the change
+            cardsAdapter = new ItemsCardsAdapter(itemList, thisHome);
+            //adapterPosts.notifyDataSetChanged(); <-- Não consigo por a funcionar com este metodo
+            recyclerViewItems.setAdapter(cardsAdapter);
+        }
     }
 
     @Override
@@ -64,12 +139,12 @@ public class MainActivity extends AppCompatActivity
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
                     //Set onclick of button to barcode scanner
-                    Button barcodeScannerButton = findViewById(R.id.barcodeScannerButton);
-                    barcodeScannerButton.setOnClickListener(new View.OnClickListener() {
+                    addBarcode.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            Intent intent = new Intent(MainActivity.this, BarcodeCaptureActivity.class);
-                            MainActivity.this.startActivity(intent);
+                            Toast.makeText(context, "Clicked addBarcode", Toast.LENGTH_LONG).show();
+                            Intent intent = new Intent(Home.this, BarcodeCaptureActivity.class);
+                            Home.this.startActivity(intent);
                         }
                     });
 
@@ -79,7 +154,7 @@ public class MainActivity extends AppCompatActivity
 
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
-                    Toast.makeText(MainActivity.this, "Permission denied to read your External storage", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Home.this, "Permission denied to read your External storage", Toast.LENGTH_SHORT).show();
                 }
                 return;
             }
