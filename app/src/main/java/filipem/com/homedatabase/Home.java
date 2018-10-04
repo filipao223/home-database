@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -21,6 +22,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -37,6 +39,9 @@ public class Home extends AppCompatActivity
     private com.getbase.floatingactionbutton.FloatingActionButton addBarcode;
 
     private RecyclerView recyclerViewItems;
+    private SwipeRefreshLayout mSwipeRefreshLayoutItems;
+
+    private TextView noItemsText;
 
     private ItemsCardsAdapter cardsAdapter;
 
@@ -79,6 +84,32 @@ public class Home extends AppCompatActivity
                 new String[]{Manifest.permission.CAMERA},
                 1);
 
+        mSwipeRefreshLayoutItems = findViewById(R.id.home_swipe_refresh);
+        Log.i(TAG, "mSwipeRefreshLayoutPosts is " + (mSwipeRefreshLayoutItems ==null?"null":"not null"));
+        if (mSwipeRefreshLayoutItems != null){
+            mSwipeRefreshLayoutItems.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                @Override
+                public void onRefresh() {
+                    Log.i(TAG, "Called onRefresh");
+                    mSwipeRefreshLayoutItems.setRefreshing(true); //Refresh icon gets toggled
+
+
+                    try{
+                        Log.i(TAG, "Refreshing data");
+
+                        refreshHomeItems();
+                        mSwipeRefreshLayoutItems.setRefreshing(false); //finished
+                    }catch(NullPointerException e){
+                        Log.e(TAG, "Error onRefresh: " + e);
+                    }
+                }
+            });
+            mSwipeRefreshLayoutItems.setColorSchemeResources(android.R.color.holo_blue_bright,
+                    android.R.color.holo_green_light,
+                    android.R.color.holo_orange_light,
+                    android.R.color.holo_red_light);
+        }
+
         recyclerViewItems = findViewById(R.id.recyclerViewItems);
         if ( recyclerViewItems != null){
             recyclerViewItems.setHasFixedSize(true); //RecyclerView terá sempre o mesmo tamanho, performance improvement
@@ -87,6 +118,11 @@ public class Home extends AppCompatActivity
             recyclerViewItems.setLayoutManager(llm);
 
             refreshHomeItems(); //Por agora objectos FeedPost são criados à mao e colocados na lista feedPost
+
+            if(!itemList.isEmpty()){
+                noItemsText = findViewById(R.id.home_no_items);
+                noItemsText.setVisibility(View.GONE);
+            }
 
             cardsAdapter = new ItemsCardsAdapter(itemList, thisHome); //RecyclerView adapterPosts
             recyclerViewItems.setAdapter(cardsAdapter);
