@@ -11,4 +11,10 @@
     <string name="test_string">Test string</string>
     <string name="no_items">Nothing here, try adding some items</string>
     <string name="title_activity_login">Login</string>
+    <string name="item_name">Item name</string>
+    <string name="item_quantity">Item quantity</string>
+    <string name="add_dialog_button">Add</string>
+    <string name="add_dialog_cancel">Cancel</string>
+    <string name="item_name_hint">Item name</string>
+    <string name="item_quantity_hint">Item quantity</string>
 </resources>

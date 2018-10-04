@@ -413,5 +413,10 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     @Override
     public void onBarcodeDetected(Barcode barcode) {
         Log.e(TAG, "Barcode detected");
+        Log.i(TAG, "(BarcodeCaptureActivity) Barcode detected is: " + barcode.rawValue);
+        Intent dataReturn = new Intent();
+        dataReturn.putExtra("Barcode", barcode);
+        setResult(RESULT_OK, dataReturn);
+        finish();
     }
 }

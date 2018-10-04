@@ -29,7 +29,7 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
 
     @Override
     public void onBindViewHolder(CardViewHolder postsCardView, int i) {
-
+        postsCardView.itemName.setText(items.get(i).getItem_name());
     }
 
     @Override
@@ -46,9 +46,11 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
 
     public static class CardViewHolder extends RecyclerView.ViewHolder {
 
+        TextView itemName;
+
         CardViewHolder(View itemView) {
             super(itemView);
-
+            itemName = itemView.findViewById(R.id.home_card_item_name);
         }
     }
 }
