@@ -7,6 +7,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.auth.FirebaseUiException;
 import com.firebase.ui.auth.IdpResponse;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -30,7 +31,7 @@ public class Login extends Activity {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             // User is signed in
-            Toast.makeText(this, "Already signed in", Toast.LENGTH_LONG).show();
+            //Toast.makeText(this, "Already signed in", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(this, Home.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             intent.putExtra("User", user);
@@ -77,8 +78,10 @@ public class Login extends Activity {
                 // sign-in flow using the back button. Otherwise check
                 // response.getError().getErrorCode() and handle the error.
                 // ...
-                Toast.makeText(this, "Sign in failed", Toast.LENGTH_LONG).show();
-                finish();
+                if (response == null) finish();
+                else{
+                    Toast.makeText(this, R.string.login_error, Toast.LENGTH_LONG).show();
+                }
             }
         }
     }

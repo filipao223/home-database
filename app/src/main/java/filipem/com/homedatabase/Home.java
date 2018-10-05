@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -74,7 +75,7 @@ public class Home extends AppCompatActivity
 
     private Home thisHome;
 
-    private List<Item> itemList;
+    private List<Item> itemList = new ArrayList<>();
 
     private boolean itemCollectionExists = false;
     private boolean itemInCollectionExists = false;
@@ -121,32 +122,12 @@ public class Home extends AppCompatActivity
             user = (FirebaseUser) extra.get("User");
         }
 
+        //Check if user exists in database
+        checkIfUserExists();
+
         Log.i(TAG, "Got user, name is : " + user.getDisplayName());
         Log.i(TAG, "Got user, email is : " + user.getEmail());
         Log.i(TAG, "Got user, uuid is : " + user.getUid());
-
-        //Check if user exists in database
-        userDocument = db.collection("users").document(user.getUid());
-        userDocument.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                DocumentSnapshot document = task.getResult();
-                if ( document.exists() ){
-                    Log.i(TAG, "User already exists!");
-                }
-                else{
-                    Log.i(TAG, "User not found!");
-                    /*Create new document then*/
-                    Map<String, Object> nestedData = new HashMap<>();
-                    nestedData.put("exists", true);
-                    try{
-                        db.collection("users").document(user.getUid()).set(nestedData);
-                    } catch(Exception e){
-                        Log.e(TAG, "Exception caught while trying to add document: "  +e);
-                    }
-                }
-            }
-        });
 
         context = this;
         thisHome = this;
@@ -168,7 +149,7 @@ public class Home extends AppCompatActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-         mNavigationView = (NavigationView) findViewById(R.id.nav_view);
+        mNavigationView = (NavigationView) findViewById(R.id.nav_view);
         mNavigationView.setNavigationItemSelectedListener(this);
 
         /*Gets camera permission*/
@@ -183,14 +164,13 @@ public class Home extends AppCompatActivity
                 @Override
                 public void onRefresh() {
                     Log.i(TAG, "Called onRefresh");
-                    mSwipeRefreshLayoutItems.setRefreshing(true); //Refresh icon gets toggled
-
 
                     try{
                         Log.i(TAG, "Refreshing data");
 
-                        refreshHomeItems();
-                        mSwipeRefreshLayoutItems.setRefreshing(false); //finished
+                        mSwipeRefreshLayoutItems.setRefreshing(true); //Refresh icon gets toggled
+                        refreshHomeItems(mSwipeRefreshLayoutItems);
+                        //mSwipeRefreshLayoutItems.setRefreshing(false); //finished
                     }catch(NullPointerException e){
                         Log.e(TAG, "Error onRefresh: " + e);
                     }
@@ -209,68 +189,135 @@ public class Home extends AppCompatActivity
             LinearLayoutManager llm = new LinearLayoutManager(context); //Manager que gere como os cartoes aparecem na view
             recyclerViewItems.setLayoutManager(llm);
 
-            refreshHomeItems(); //Por agora objectos FeedPost são criados à mao e colocados na lista feedPost
+            /*Initial refresh*/
+            if(isNetworkConnected()){
+                Toast.makeText(this, R.string.get_data_server, Toast.LENGTH_LONG).show();
+                mSwipeRefreshLayoutItems.setRefreshing(true);
+                db.collection("users").document(user.getUid())
+                        .collection("items").get()
+                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                            @Override
+                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                if(task.isSuccessful()){
+                                    for(QueryDocumentSnapshot documentSnapshot: task.getResult()){
+                                        if (documentSnapshot.getId().matches("testitem")) continue;
+                                        Log.v(TAG, "Got item, barcode => " + (String)documentSnapshot.getId());
+                                        Item item = new Item("", (String)documentSnapshot.get("item_name"), (long)documentSnapshot.get("item_quantity"));
+                                        itemList.add(item);
+                                    }
 
-            if(!itemList.isEmpty()){
-                noItemsText.setVisibility(View.GONE);
+                                    noItemsText.setVisibility(View.GONE);
+
+                                    cardsAdapter = new ItemsCardsAdapter(itemList, thisHome);
+                                    recyclerViewItems.setAdapter(cardsAdapter);
+                                    mSwipeRefreshLayoutItems.setRefreshing(false);
+                                }
+                            }
+                        });
+            }
+            else{
+                //Placeholder item, without adapter, swipe to refresh doesnt work
+                itemList.add(new Item("", "empty", 0));
+                cardsAdapter = new ItemsCardsAdapter(itemList, thisHome);
+                recyclerViewItems.setAdapter(cardsAdapter);
+                Toast.makeText(this, R.string.no_network, Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Error, no network in Home");
             }
 
-            cardsAdapter = new ItemsCardsAdapter(itemList, thisHome); //RecyclerView adapterPosts
-            recyclerViewItems.setAdapter(cardsAdapter);
         }
     }
 
-    private void refreshHomeItems() {
+    private void checkIfUserExists() {
+        if (isNetworkConnected()){
+            userDocument = db.collection("users").document(user.getUid());
+            userDocument.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                    DocumentSnapshot document = task.getResult();
+                    if ( document.exists() ){
+                        Log.i(TAG, "User already exists!");
+
+                    }
+                    else{
+                        Log.i(TAG, "User not found!");
+                        /*Create new document then*/
+                        Map<String, Object> nestedData = new HashMap<>();
+                        nestedData.put("exists", true);
+                        try{
+                            db.collection("users").document(user.getUid()).set(nestedData);
+                        } catch(Exception e){
+                            Log.e(TAG, "Exception caught while trying to add document: "  +e);
+                        }
+                    }
+                }
+            });
+        }
+        else{
+            Log.e(TAG, "Error, no network in checkIfUserExists");
+        }
+    }
+
+    private void refreshHomeItems(SwipeRefreshLayout swipeLayout) {
         Log.i(TAG, "refreshHomeItems was called");
 
-        //Clear old data
-        if (itemList != null){
-            itemList.clear();
-            Log.i(TAG, "Cleared itemslist data");
-        }
-        else itemList = new ArrayList<>();
+        //Check for internet connection
+        if(isNetworkConnected()){
+            //Clear old data
+            if (itemList != null){
+                itemList.clear();
+                Log.i(TAG, "Cleared itemslist data");
+            }
+            else itemList = new ArrayList<>();
 
-        //Fill with new data
-        Log.i(TAG, "Filling with new data");
+            //Fill with new data
+            Log.i(TAG, "Filling with new data");
 
 
-        checkForItemCollection();
-        if(itemCollectionExists){
 
-            userDocument.collection("items").get()
+            Log.d(TAG, "itemCollectionExists");
+
+            db.collection("users").document(user.getUid())
+                    .collection("items").get()
                     .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                         @Override
                         public void onComplete(@NonNull Task<QuerySnapshot> task) {
                             if(task.isSuccessful()){
                                 for(QueryDocumentSnapshot documentSnapshot: task.getResult()){
                                     if (documentSnapshot.getId().matches("testitem")) continue;
+                                    Log.v(TAG, "Got item, barcode => " + (String)documentSnapshot.getId());
                                     Item item = new Item("", (String)documentSnapshot.get("item_name"), (long)documentSnapshot.get("item_quantity"));
                                     itemList.add(item);
                                 }
+
+                                if (itemList.isEmpty()){
+                                    noItemsText.setVisibility(View.VISIBLE);
+                                }
+                                else noItemsText.setVisibility(View.INVISIBLE);
+
+
+                                Log.i(TAG, "New data added, example: " + (itemList.isEmpty()?"null":itemList.get(0).toString()));
+
+                                //Create adapterPosts if null
+                                if (cardsAdapter == null){
+                                    cardsAdapter = new ItemsCardsAdapter(itemList, thisHome);
+                                    Log.i(TAG, "New adapterPosts created");
+                                }
+                                else{
+                                    //Notify adapterPosts of the change
+                                    cardsAdapter = new ItemsCardsAdapter(itemList, thisHome);
+                                    //adapterPosts.notifyDataSetChanged(); <-- Não consigo por a funcionar com este metodo
+                                    recyclerViewItems.setAdapter(cardsAdapter);
+                                }
+
+                                mSwipeRefreshLayoutItems.setRefreshing(false);
                             }
                         }
                     });
-
-        }
-
-        if (itemList.isEmpty()){
-            noItemsText.setVisibility(View.VISIBLE);
-        }
-        else noItemsText.setVisibility(View.GONE);
-
-
-        Log.i(TAG, "New data added, example: " + (itemList.isEmpty()?"null":itemList.get(0).toString()));
-
-        //Create adapterPosts if null
-        if (cardsAdapter == null){
-            cardsAdapter = new ItemsCardsAdapter(itemList, thisHome);
-            Log.i(TAG, "New adapterPosts created");
         }
         else{
-            //Notify adapterPosts of the change
-            cardsAdapter = new ItemsCardsAdapter(itemList, thisHome);
-            //adapterPosts.notifyDataSetChanged(); <-- Não consigo por a funcionar com este metodo
-            recyclerViewItems.setAdapter(cardsAdapter);
+            Toast.makeText(this, R.string.no_network, Toast.LENGTH_LONG).show();
+            Log.e(TAG, "No internet connection in refreshHomeItems");
+            mSwipeRefreshLayoutItems.setRefreshing(false);
         }
     }
 
@@ -288,7 +335,7 @@ public class Home extends AppCompatActivity
                     addBarcode.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            Toast.makeText(context, "Clicked addBarcode", Toast.LENGTH_LONG).show();
+                            Toast.makeText(context, R.string.af_error, Toast.LENGTH_LONG).show();
                             Intent intent = new Intent(Home.this, BarcodeCaptureActivity.class);
                             Home.this.startActivityForResult(intent, RC_BARCODE_SCAN);
                         }
@@ -300,7 +347,7 @@ public class Home extends AppCompatActivity
 
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
-                    Toast.makeText(Home.this, "Permission denied to read your External storage", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Home.this, R.string.refused_camera, Toast.LENGTH_SHORT).show();
                 }
                 return;
             }
@@ -501,5 +548,10 @@ public class Home extends AppCompatActivity
                     }
                 });
 
+    }
+
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        return cm.getActiveNetworkInfo() != null;
     }
 }

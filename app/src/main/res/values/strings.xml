@@ -19,4 +19,9 @@
     <string name="item_quantity_hint">Item quantity</string>
     <string name="sign_out">Sign Out</string>
     <string name="exit_app">Exit app</string>
+    <string name="get_data_server">Getting data from server</string>
+    <string name="login_error">Error in log-in. Please try again</string>
+    <string name="no_network">No network connection, try again later.</string>
+    <string name="refused_camera">Permission denied to use camera</string>
+    <string name="af_error">If autofocus doesn\'t work, tap on screen once</string>
 </resources>
