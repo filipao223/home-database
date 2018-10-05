@@ -24,6 +24,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,6 +33,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.vision.barcode.Barcode;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -78,6 +81,9 @@ public class Home extends AppCompatActivity
 
     private AlertDialog addItemConfirm;
 
+    private NavigationView mNavigationView;
+    private LinearLayout navHeader;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,6 +91,25 @@ public class Home extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        /*-----Initialize drawer image, name and email-----*/
+        final Handler h1 = new Handler();
+        h1.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                navHeader = findViewById(R.id.nav_header);
+                ImageView userPhoto = navHeader.findViewById(R.id.drawer_user_image);
+                TextView userName = navHeader.findViewById(R.id.drawer_user_name);
+                TextView userEmail = navHeader.findViewById(R.id.drawer_user_email);
+
+                userName.setText(user.getDisplayName());
+                userEmail.setText(user.getEmail());
+                userPhoto.setImageURI(null);
+                userPhoto.setImageURI(user.getPhotoUrl());
+            }
+        }, 150);
+
+
+        /*-----If no items exist, this text view appears----*/
         noItemsText = findViewById(R.id.home_no_items);
 
         //Get user
@@ -100,6 +125,7 @@ public class Home extends AppCompatActivity
         Log.i(TAG, "Got user, email is : " + user.getEmail());
         Log.i(TAG, "Got user, uuid is : " + user.getUid());
 
+        //Check if user exists in database
         userDocument = db.collection("users").document(user.getUid());
         userDocument.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
@@ -142,8 +168,8 @@ public class Home extends AppCompatActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+         mNavigationView = (NavigationView) findViewById(R.id.nav_view);
+        mNavigationView.setNavigationItemSelectedListener(this);
 
         /*Gets camera permission*/
         ActivityCompat.requestPermissions(Home.this,
@@ -322,18 +348,17 @@ public class Home extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
+        if (id == R.id.nav_signout) {
+            //Sign out from the app and go back to login
+            FirebaseAuth.getInstance().signOut();
+            Intent intent = new Intent(this, Login.class);
+            startActivity(intent);
+            finish();
+            return true;
+        } else if(id == R.id.nav_exit){
+            //Exit app
+            finish();
+            return true;
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);

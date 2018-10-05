@@ -3,6 +3,7 @@ package filipem.com.homedatabase;
 import android.content.Intent;
 import android.os.Bundle;
 import android.app.Activity;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
@@ -16,6 +17,7 @@ import java.util.List;
 public class Login extends Activity {
 
     private static final int RC_SIGN_IN = 123;
+    private static final String TAG = "Login";
     private FirebaseAuth mAuth;
 
     @Override
@@ -24,6 +26,21 @@ public class Login extends Activity {
         setContentView(R.layout.activity_login);
 
         mAuth = FirebaseAuth.getInstance();
+
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            // User is signed in
+            Toast.makeText(this, "Already signed in", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(this, Home.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            intent.putExtra("User", user);
+            startActivity(intent);
+            finish();
+            return;
+        } else {
+            // User is signed out
+            Log.d(TAG, "onAuthStateChanged:signed_out");
+        }
 
         List<AuthUI.IdpConfig> providers = Arrays.asList(
                 new AuthUI.IdpConfig.EmailBuilder().build(),
@@ -53,6 +70,7 @@ public class Login extends Activity {
                 Intent intent = new Intent(this, Home.class);
                 intent.putExtra("User", user);
                 startActivity(intent);
+                finish();
 
             } else {
                 // Sign in failed. If response is null the user canceled the
@@ -60,6 +78,7 @@ public class Login extends Activity {
                 // response.getError().getErrorCode() and handle the error.
                 // ...
                 Toast.makeText(this, "Sign in failed", Toast.LENGTH_LONG).show();
+                finish();
             }
         }
     }

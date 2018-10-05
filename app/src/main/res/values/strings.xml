@@ -17,4 +17,6 @@
     <string name="add_dialog_cancel">Cancel</string>
     <string name="item_name_hint">Item name</string>
     <string name="item_quantity_hint">Item quantity</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="exit_app">Exit app</string>
 </resources>
