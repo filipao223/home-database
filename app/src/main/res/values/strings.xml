@@ -24,4 +24,10 @@
     <string name="no_network">No network connection, try again later.</string>
     <string name="refused_camera">Permission denied to use camera</string>
     <string name="af_error">If autofocus doesn\'t work, tap on screen once</string>
+    <string name="card_category_separator"><![CDATA[>]]></string>
+    <string name="card_default_category">Comida</string>
+    <string name="item_label">Item label</string>
+    <string name="card_default_subcategory">Bolachas</string>
+    <string name="card_default_quantity">4</string>
+    <string name="card_default_barcode">91233452</string>
 </resources>
