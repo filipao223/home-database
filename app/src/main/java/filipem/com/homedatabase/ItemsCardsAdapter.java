@@ -1,11 +1,27 @@
 package filipem.com.homedatabase;
 
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.ListPreloader;
+import com.bumptech.glide.RequestBuilder;
+import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.util.ViewPreloadSizeProvider;
+import com.firebase.ui.storage.images.FirebaseImageLoader;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.io.Serializable;
 import java.util.List;
@@ -16,10 +32,14 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
     List<Item> items;
     Home mainActivity;
     private int mExpandedPosition = -1;
+    private StorageReference storageRef;
 
-    ItemsCardsAdapter(List<Item> items, Home mainActivity){
+    ListPreloader.PreloadSizeProvider sizeProvider = new ViewPreloadSizeProvider();
+
+    ItemsCardsAdapter(List<Item> items, Home mainActivity, StorageReference storageRef){
         this.items = items;
         this.mainActivity = mainActivity;
+        this.storageRef = storageRef;
     }
 
     @Override
@@ -28,8 +48,37 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
     }
 
     @Override
-    public void onBindViewHolder(CardViewHolder postsCardView, int i) {
+    public void onBindViewHolder(final CardViewHolder postsCardView, int i) {
         postsCardView.itemName.setText(items.get(i).getItem_name());
+        //Get url of image
+        // Load the image using Glide
+        Log.i(TAG, "Getting image for item \"" + items.get(postsCardView.getAdapterPosition()).getItem_name() +
+                            "\" with url => " + storageRef.child(items.get(postsCardView.getAdapterPosition()).getItem_name()).toString() + ".jpeg");
+        Glide.with(this.mainActivity)
+                .load(storageRef.child(items.get(postsCardView.getAdapterPosition()).getItem_name()+".jpeg"))
+                .apply(new RequestOptions()
+                        .placeholder(R.drawable.circular_progress_bar)
+                        .error(R.drawable.round_face_24))
+                .into(postsCardView.itemPhoto);
+        /*storageRef.child(items.get(i).getItem_name()+".jpeg").getDownloadUrl()
+                .addOnSuccessListener(new OnSuccessListener<Uri>() {
+            @Override
+            public void onSuccess(Uri uri) {
+                Log.i(TAG, "Got image url for item \"" + items
+                        .get(postsCardView.getAdapterPosition()).getItem_name()
+                         + "\" => " + uri.toString());
+
+                //Load with Glide
+
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e(TAG, "No image url found for item \"" + items
+                        .get(postsCardView.getAdapterPosition()).getItem_name()+"\" with ref " +
+                        "=> " + storageRef.child(items.get(postsCardView.getAdapterPosition()).getItem_name()+".jpeg").toString());
+            }
+        });*/
     }
 
     @Override
@@ -47,10 +96,12 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
     public static class CardViewHolder extends RecyclerView.ViewHolder {
 
         TextView itemName;
+        ImageView itemPhoto;
 
         CardViewHolder(View itemView) {
             super(itemView);
             itemName = itemView.findViewById(R.id.home_card_item_name);
+            itemPhoto = itemView.findViewById(R.id.home_card_item_photo);
         }
     }
 }

@@ -39,8 +39,11 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,6 +68,9 @@ public class Home extends AppCompatActivity
     private FirebaseUser user;
     private DocumentReference userDocument;
     private DocumentReference newUserDocument;
+    private FirebaseStorage storage = FirebaseStorage.getInstance();
+    private StorageReference storageRef = storage.getReference();
+    private StorageReference imagesRef = storageRef.child("itemImages");
 
     private RecyclerView recyclerViewItems;
     private SwipeRefreshLayout mSwipeRefreshLayoutItems;
@@ -112,6 +118,12 @@ public class Home extends AppCompatActivity
 
         /*-----If no items exist, this text view appears----*/
         noItemsText = findViewById(R.id.home_no_items);
+
+        //Get storage
+        storage = FirebaseStorage.getInstance();
+        storageRef = storage.getReference();
+        imagesRef = storageRef.child("itemImages");
+
 
         //Get user
         Bundle extra = getIntent().getExtras();
@@ -208,7 +220,7 @@ public class Home extends AppCompatActivity
 
                                     noItemsText.setVisibility(View.GONE);
 
-                                    cardsAdapter = new ItemsCardsAdapter(itemList, thisHome);
+                                    cardsAdapter = new ItemsCardsAdapter(itemList, thisHome, imagesRef);
                                     recyclerViewItems.setAdapter(cardsAdapter);
                                     mSwipeRefreshLayoutItems.setRefreshing(false);
                                 }
@@ -218,7 +230,7 @@ public class Home extends AppCompatActivity
             else{
                 //Placeholder item, without adapter, swipe to refresh doesnt work
                 itemList.add(new Item("", "empty", 0));
-                cardsAdapter = new ItemsCardsAdapter(itemList, thisHome);
+                cardsAdapter = new ItemsCardsAdapter(itemList, thisHome, imagesRef);
                 recyclerViewItems.setAdapter(cardsAdapter);
                 Toast.makeText(this, R.string.no_network, Toast.LENGTH_LONG).show();
                 Log.e(TAG, "Error, no network in Home");
@@ -299,12 +311,12 @@ public class Home extends AppCompatActivity
 
                                 //Create adapterPosts if null
                                 if (cardsAdapter == null){
-                                    cardsAdapter = new ItemsCardsAdapter(itemList, thisHome);
+                                    cardsAdapter = new ItemsCardsAdapter(itemList, thisHome, imagesRef);
                                     Log.i(TAG, "New adapterPosts created");
                                 }
                                 else{
                                     //Notify adapterPosts of the change
-                                    cardsAdapter = new ItemsCardsAdapter(itemList, thisHome);
+                                    cardsAdapter = new ItemsCardsAdapter(itemList, thisHome, imagesRef);
                                     //adapterPosts.notifyDataSetChanged(); <-- Não consigo por a funcionar com este metodo
                                     recyclerViewItems.setAdapter(cardsAdapter);
                                 }
