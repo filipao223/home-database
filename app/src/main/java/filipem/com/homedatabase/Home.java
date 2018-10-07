@@ -444,6 +444,13 @@ public class Home extends AppCompatActivity
                     final Button confirmButton = mView.findViewById(R.id.add_item_dialog_confirm);
                     final Button cancelButton = mView.findViewById(R.id.add_item_dialog_cancel);
 
+                    cancelButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            addItemConfirm.dismiss();
+                        }
+                    });
+
                     confirmButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
@@ -455,45 +462,54 @@ public class Home extends AppCompatActivity
                                         @Override
                                         public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                                             //------------Items exists
+                                            Log.d(TAG, "Items collection exists for user " + user.getUid());
                                             db.collection("users").document(user.getUid())
                                                     .collection("items")
                                                     .document(barcode.rawValue)
                                                     .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                                                 @Override
                                                 public void onSuccess(DocumentSnapshot documentSnapshot) {
-                                                    //---------Specific item already exists
-                                                    Log.d(TAG, "Item with barcode => " +
-                                                    barcode.rawValue + " already exists");
-                                                }
-                                            }).addOnFailureListener(new OnFailureListener() {
-                                                @Override
-                                                public void onFailure(@NonNull Exception e) {
-                                                    //---------Specific item doesnt exist yet
-                                                    Map<String, Object> data = new HashMap<>();
-                                                    String text = itemName.getText().toString();
-                                                    Log.d(TAG, "itemName: " + text);
-                                                    if (text.matches("")){
-                                                        Toast.makeText(context, "Invalid item name", Toast.LENGTH_LONG).show();
-                                                        addItemConfirm.dismiss();
-                                                        return;
+                                                    if (documentSnapshot.exists()){
+                                                        //---------Specific item already exists
+                                                        Log.d(TAG, "Item with barcode => " +
+                                                                barcode.rawValue + " already exists");
                                                     }
-                                                    data.put("item_name", text);
-                                                    text = itemQuantity.getText().toString();
-                                                    Log.d(TAG, "itemquantity: " + text);
-                                                    if (text.matches("") || text.matches("[^0-9]")){
-                                                        Toast.makeText(context, "Invalid item quantity", Toast.LENGTH_LONG).show();
-                                                        addItemConfirm.dismiss();
-                                                        return;
-                                                    }
-                                                    data.put("item_quantity", Integer.parseInt(text));
-                                                    userDocument.collection("items").document(barcode.rawValue).set(data)
+                                                    else {
+                                                        //---------Specific item doesnt exist yet
+                                                        Log.d(TAG, "Item with barcode => " +
+                                                                barcode.rawValue + " doesn't yet exist");
+                                                        Map<String, Object> data = new HashMap<>();
+                                                        String text = itemName.getText().toString();
+                                                        Log.d(TAG, "itemName: " + text);
+                                                        if (text.matches("")){
+                                                            Toast.makeText(context, "Invalid item name", Toast.LENGTH_LONG).show();
+                                                            addItemConfirm.dismiss();
+                                                            return;
+                                                        }
+                                                        data.put("item_name", text);
+                                                        text = itemQuantity.getText().toString();
+                                                        Log.d(TAG, "itemquantity: " + text);
+                                                        if (text.matches("") || text.matches("[^0-9]")){
+                                                            Toast.makeText(context, "Invalid item quantity", Toast.LENGTH_LONG).show();
+                                                            addItemConfirm.dismiss();
+                                                            return;
+                                                        }
+                                                        data.put("item_quantity", Integer.parseInt(text));
+                                                        userDocument.collection("items").document(barcode.rawValue).set(data)
                                                             .addOnCompleteListener(new OnCompleteListener<Void>() {
                                                                 @Override
                                                                 public void onComplete(@NonNull Task<Void> task) {
                                                                     Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
                                                                 }
                                                             });
-                                                    addItemConfirm.dismiss();
+                                                        addItemConfirm.dismiss();
+                                                    }
+                                                }
+                                                }).addOnFailureListener(new OnFailureListener() {
+                                                @Override
+                                                public void onFailure(@NonNull Exception e) {
+                                                    Log.e(TAG, "Error trying to retrieve item information");
+                                                    Toast.makeText(thisHome, "Error contacting server", Toast.LENGTH_LONG).show();
                                                 }
                                             });
 
@@ -501,43 +517,9 @@ public class Home extends AppCompatActivity
                                     }).addOnFailureListener(new OnFailureListener() {
                                         @Override
                                         public void onFailure(@NonNull Exception e) {
-                                            //------There is no "items" collection yet
-                                            Log.e(TAG, "Tried to access non existant items collection");
+                                            Log.e(TAG, "Error retrieving collection \"items\"");
                                         }
                                     });
-                            /*---------OLD CODE-------------*/
-                            /*------Check if item collection already exists------*/
-                            /*checkForItemCollection();
-                            if (itemCollectionExists){
-                                -------Check if current item already exis
-                                checkIfItemAlreadyExists(barcode.rawValue);
-                                if (itemInCollectionExists){
-
-                                    First get current values
-                                    userDocument.collection("items").document(barcode.rawValue).get()
-                                            .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                                                @Override
-                                                public void onSuccess(DocumentSnapshot documentSnapshot) {
-                                                    try{
-                                                        tempItem.setItem_name((String) documentSnapshot.get("item_name"));
-                                                        tempItem.setItem_quantity((int) documentSnapshot.get("item_quantity"));
-                                                    } catch(ClassCastException e){
-                                                        Log.e(TAG, "Wrong casting while getting data: " + e);
-                                                    } finally {
-                                                        Log.e(TAG, "Other error while getting data");
-                                                    }
-
-                                                    Log.d(TAG, "Got item name from db: " + tempItem.getItem_name());
-                                                    Log.d(TAG, "Got item quantity from db: " + tempItem.getItem_quantity());
-                                                }
-                                            });
-
-                                }
-                                else{
-                                /*---------Item doesn't exist yet-------
-
-                                }
-                            }*/
                         }
                     });
 

@@ -30,4 +30,5 @@
     <string name="card_default_subcategory">Bolachas</string>
     <string name="card_default_quantity">4</string>
     <string name="card_default_barcode">91233452</string>
+    <string name="long_test_string">Very long test string to test limits</string>
 </resources>
