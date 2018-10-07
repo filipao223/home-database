@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "573691486695",
+    "firebase_url": "https://home-database-36bf3.firebaseio.com",
+    "project_id": "home-database-36bf3",
+    "storage_bucket": "home-database-36bf3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:573691486695:android:848efe84e7c6b7a2",
+        "android_client_info": {
+          "package_name": "filipem.com.homedatabase"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "573691486695-id4ffe2ae3o0ul2oig9rb65p7p5bjvs4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "filipem.com.homedatabase",
+            "certificate_hash": "abb9325733e65f0cc5f6e6bf5b2485160a8a357b"
+          }
+        },
+        {
+          "client_id": "573691486695-dp2thiok3jamk3uleallll16p73svefr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCX3GHSGxkF2OzUzkdyRX2sICtnaLFPyxA"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "573691486695-dp2thiok3jamk3uleallll16p73svefr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

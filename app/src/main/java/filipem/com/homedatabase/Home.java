@@ -14,6 +14,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -31,6 +32,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.vision.barcode.Barcode;
@@ -445,14 +447,73 @@ public class Home extends AppCompatActivity
                     confirmButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
+                            /*---------NEW CODE-------------*/
+                            db.collection("users").document(user.getUid())
+                                    .collection("items")
+                                    .get()
+                                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                        @Override
+                                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                            //------------Items exists
+                                            db.collection("users").document(user.getUid())
+                                                    .collection("items")
+                                                    .document(barcode.rawValue)
+                                                    .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                                                @Override
+                                                public void onSuccess(DocumentSnapshot documentSnapshot) {
+                                                    //---------Specific item already exists
+                                                    Log.d(TAG, "Item with barcode => " +
+                                                    barcode.rawValue + " already exists");
+                                                }
+                                            }).addOnFailureListener(new OnFailureListener() {
+                                                @Override
+                                                public void onFailure(@NonNull Exception e) {
+                                                    //---------Specific item doesnt exist yet
+                                                    Map<String, Object> data = new HashMap<>();
+                                                    String text = itemName.getText().toString();
+                                                    Log.d(TAG, "itemName: " + text);
+                                                    if (text.matches("")){
+                                                        Toast.makeText(context, "Invalid item name", Toast.LENGTH_LONG).show();
+                                                        addItemConfirm.dismiss();
+                                                        return;
+                                                    }
+                                                    data.put("item_name", text);
+                                                    text = itemQuantity.getText().toString();
+                                                    Log.d(TAG, "itemquantity: " + text);
+                                                    if (text.matches("") || text.matches("[^0-9]")){
+                                                        Toast.makeText(context, "Invalid item quantity", Toast.LENGTH_LONG).show();
+                                                        addItemConfirm.dismiss();
+                                                        return;
+                                                    }
+                                                    data.put("item_quantity", Integer.parseInt(text));
+                                                    userDocument.collection("items").document(barcode.rawValue).set(data)
+                                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                                @Override
+                                                                public void onComplete(@NonNull Task<Void> task) {
+                                                                    Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
+                                                                }
+                                                            });
+                                                    addItemConfirm.dismiss();
+                                                }
+                                            });
+
+                                        }
+                                    }).addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            //------There is no "items" collection yet
+                                            Log.e(TAG, "Tried to access non existant items collection");
+                                        }
+                                    });
+                            /*---------OLD CODE-------------*/
                             /*------Check if item collection already exists------*/
-                            checkForItemCollection();
+                            /*checkForItemCollection();
                             if (itemCollectionExists){
-                                /*-------Check if current item already exists*/
+                                -------Check if current item already exis
                                 checkIfItemAlreadyExists(barcode.rawValue);
                                 if (itemInCollectionExists){
 
-                                    /*First get current values*/
+                                    First get current values
                                     userDocument.collection("items").document(barcode.rawValue).get()
                                             .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                                                 @Override
@@ -473,34 +534,10 @@ public class Home extends AppCompatActivity
 
                                 }
                                 else{
-                                /*---------Item doesn't exist yet-------*/
-                                    Map<String, Object> data = new HashMap<>();
-                                    String text = itemName.getText().toString();
-                                    Log.d(TAG, "itemName: " + text);
-                                    if (text.matches("")){
-                                        Toast.makeText(context, "Invalid item name", Toast.LENGTH_LONG).show();
-                                        addItemConfirm.dismiss();
-                                        return;
-                                    }
-                                    data.put("item_name", text);
-                                    text = itemQuantity.getText().toString();
-                                    Log.d(TAG, "itemquantity: " + text);
-                                    if (text.matches("") || text.matches("[^0-9]")){
-                                        Toast.makeText(context, "Invalid item quantity", Toast.LENGTH_LONG).show();
-                                        addItemConfirm.dismiss();
-                                        return;
-                                    }
-                                    data.put("item_quantity", Integer.parseInt(text));
-                                    userDocument.collection("items").document(barcode.rawValue).set(data)
-                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                                @Override
-                                                public void onComplete(@NonNull Task<Void> task) {
-                                                    Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
-                                                }
-                                            });
-                                    addItemConfirm.dismiss();
+                                /*---------Item doesn't exist yet-------
+
                                 }
-                            }
+                            }*/
                         }
                     });
 
