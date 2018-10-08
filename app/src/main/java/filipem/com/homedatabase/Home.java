@@ -15,7 +15,6 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -110,6 +109,11 @@ public class Home extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .setTimestampsInSnapshotsEnabled(true)
+                .build();
+        db.setFirestoreSettings(settings);
+
         /*-----Initialize drawer image, name and email-----*/
         final Handler h1 = new Handler();
         h1.postDelayed(new Runnable() {
@@ -159,13 +163,6 @@ public class Home extends AppCompatActivity
         menuButtons = findViewById(R.id.menu_multiple_actions);
         addByHand = findViewById(R.id.addByHand);
         addBarcode = findViewById(R.id.addBarcode);
-
-        addByHand.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Toast.makeText(context, "Clicked addByHand", Toast.LENGTH_LONG).show();
-            }
-        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -249,6 +246,108 @@ public class Home extends AppCompatActivity
                 Log.e(TAG, "Error, no network in Home");
             }
 
+            //------Set add by hand---------
+            addByHand.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+
+                    final AlertDialog.Builder mBuilder = new AlertDialog.Builder(thisHome);
+                    final View mView = getLayoutInflater().inflate(R.layout.item_add_dialog, null);
+
+                    /*Default locale*/
+                    Locale currentLocale = Locale.getDefault();
+                    final String language = currentLocale.getLanguage();
+
+                    /*Get main category spinner*/
+                    final Spinner categorySpinner = mView.findViewById(R.id.add_item_dialog_spinner_category);
+                    categorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                            ((TextView) view).setTextColor(Color.BLACK);
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> adapterView) {
+
+                        }
+                    });
+
+                    final List<String> categories = new ArrayList<>();
+                    final ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, categories);
+
+                    /*Get categories from server*/
+                    db.collection("categories").get()
+                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                @Override
+                                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                    if (queryDocumentSnapshots.isEmpty()){
+                                        Log.e(TAG, "No categories found in database");
+                                        Toast.makeText(thisHome, R.string.no_categories_db, Toast.LENGTH_LONG).show();
+                                    }
+                                    else{
+                                        for(DocumentSnapshot documents: queryDocumentSnapshots.getDocuments()){
+                                            if (documents.getId().matches("testcategory")) continue;
+                                            Object tryCategoryLanguage = documents.get("name_"+language);
+                                            if (tryCategoryLanguage != null){
+                                                Log.d(TAG, "Found localized category (" + language + "_" + tryCategoryLanguage + ")");
+                                                categories.add((String)tryCategoryLanguage);
+                                            }
+                                            else{
+                                                Log.d(TAG, "Did not found localized category (" + language + "_" + tryCategoryLanguage + ")");
+                                                categories.add(documents.getId());
+                                            }
+                                        }
+
+                                        dataAdapter.notifyDataSetChanged();
+                                    }
+                                }
+                            });
+
+                    dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    categorySpinner.setAdapter(dataAdapter);
+                    categorySpinner.setSelection(0);
+
+                    itemName = mView.findViewById(R.id.add_item_dialog_name);
+                    itemQuantity = mView.findViewById(R.id.add_item_dialog_quantity);
+                    itemBarcode = mView.findViewById(R.id.add_item_dialog_barcode);
+                    confirmButton = mView.findViewById(R.id.add_item_dialog_confirm);
+                    cancelButton = mView.findViewById(R.id.add_item_dialog_cancel);
+
+                    cancelButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            addItemConfirm.dismiss();
+                        }
+                    });
+
+                    confirmButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            //Get barcode from text box
+                            String barcodeString = itemBarcode.getText().toString();
+
+                            if (barcodeString.matches("") || barcodeString.matches("[^0-9]")){
+                                Toast.makeText(thisHome, R.string.invalid_barcode, Toast.LENGTH_LONG).show();
+                            }
+                            else{
+                                Barcode barcode = new Barcode();
+                                barcode.rawValue = barcodeString;
+                                addItemDialogAcceptOnClick(barcode, categorySpinner);
+                            }
+                        }
+                    });
+
+                    final Handler h = new Handler();
+                    h.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            mBuilder.setView(mView);
+                            addItemConfirm = mBuilder.create();
+                            addItemConfirm.show();
+                        }
+                    }, 100);
+                }
+            });
         }
     }
 
@@ -507,7 +606,7 @@ public class Home extends AppCompatActivity
 
                     itemName = mView.findViewById(R.id.add_item_dialog_name);
                     itemQuantity = mView.findViewById(R.id.add_item_dialog_quantity);
-                    itemBarcode = mView.findViewById(R.id.add_item_dialog_barcode);
+                    itemBarcode = mView.findViewById(R.id.add_item_dialog_barcode); itemBarcode.setText(barcode.rawValue);
                     confirmButton = mView.findViewById(R.id.add_item_dialog_confirm);
                     cancelButton = mView.findViewById(R.id.add_item_dialog_cancel);
 
@@ -521,88 +620,8 @@ public class Home extends AppCompatActivity
                     confirmButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            /*---------NEW CODE-------------*/
-                            if (isNetworkConnected()){
-                                db.collection("users").document(user.getUid())
-                                        .collection("items")
-                                        .get()
-                                        .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                                            @Override
-                                            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                                                //------------Items exists
-                                                Log.d(TAG, "Items collection exists for user " + user.getUid());
-                                                db.collection("users").document(user.getUid())
-                                                        .collection("items")
-                                                        .document(barcode.rawValue)
-                                                        .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                                                    @Override
-                                                    public void onSuccess(DocumentSnapshot documentSnapshot) {
-                                                        if (documentSnapshot.exists()){
-                                                            //---------Specific item already exists
-                                                            Log.d(TAG, "Item with barcode => " +
-                                                                    barcode.rawValue + " already exists");
-                                                            Toast.makeText(thisHome, R.string.add_item_already_exists_error, Toast.LENGTH_LONG).show();
-                                                        }
-                                                        else {
-                                                            //---------Specific item doesnt exist yet
-                                                            Log.d(TAG, "Item with barcode => " +
-                                                                    barcode.rawValue + " doesn't yet exist");
-                                                            Map<String, Object> data = new HashMap<>();
-                                                            String text = itemName.getText().toString();
-                                                            Log.d(TAG, "itemName: " + text);
-                                                            if (text.matches("")){
-                                                                Log.e(TAG, "Invalid item name");
-                                                                Toast.makeText(context, R.string.add_item_invalid_name, Toast.LENGTH_LONG).show();
-                                                                //addItemConfirm.dismiss();
-                                                                return;
-                                                            }
-                                                            data.put("item_name", text);
-                                                            text = itemQuantity.getText().toString();
-                                                            Log.d(TAG, "itemquantity: " + text);
-                                                            if (text.matches("") || text.matches("[^0-9]")){
-                                                                Log.e(TAG, "Invalid item quantity");
-                                                                Toast.makeText(context, R.string.add_item_invalid_number, Toast.LENGTH_LONG).show();
-                                                                //addItemConfirm.dismiss();
-                                                                return;
-                                                            }
-                                                            data.put("item_quantity", Integer.parseInt(text));
-                                                            text = (String)categorySpinner.getSelectedItem();
-                                                            Log.d(TAG, "Select item is: " + text);
-                                                            data.put("item_category", text);
+                            addItemDialogAcceptOnClick(barcode, categorySpinner);
 
-                                                            data.put("item_subcategory", "Outros");
-
-                                                            userDocument.collection("items").document(barcode.rawValue).set(data)
-                                                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                                                        @Override
-                                                                        public void onComplete(@NonNull Task<Void> task) {
-                                                                            Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
-                                                                        }
-                                                                    });
-                                                            addItemConfirm.dismiss();
-                                                        }
-                                                    }
-                                                }).addOnFailureListener(new OnFailureListener() {
-                                                    @Override
-                                                    public void onFailure(@NonNull Exception e) {
-                                                        Log.e(TAG, "Error trying to retrieve item information");
-                                                        Toast.makeText(thisHome, "Error contacting server", Toast.LENGTH_LONG).show();
-                                                    }
-                                                });
-
-                                            }
-                                        }).addOnFailureListener(new OnFailureListener() {
-                                    @Override
-                                    public void onFailure(@NonNull Exception e) {
-                                        Log.e(TAG, "Error retrieving collection \"items\"");
-                                    }
-                                });
-                            }
-                            else{
-                                /*-------NO NETWORK CONNECTION-------*/
-                                Log.e(TAG, "Tried to add item without network connection");
-                                Toast.makeText(thisHome, R.string.no_network, Toast.LENGTH_LONG).show();
-                            }
                         }
                     });
 
@@ -620,6 +639,111 @@ public class Home extends AppCompatActivity
                     Log.e(TAG, "Returned null barcode");
                 }
             }
+        }
+    }
+
+    private void addItemDialogAcceptOnClick(final Barcode barcode, final Spinner categorySpinner) {
+        /*---------NEW CODE-------------*/
+        if (isNetworkConnected()){
+            db.collection("users").document(user.getUid())
+                    .collection("items")
+                    .get()
+                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                        @Override
+                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                            //------------Items exists
+                            Log.d(TAG, "Items collection exists for user " + user.getUid());
+                            db.collection("users").document(user.getUid())
+                                    .collection("items")
+                                    .document(barcode.rawValue)
+                                    .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                                @Override
+                                public void onSuccess(DocumentSnapshot documentSnapshot) {
+                                    if (documentSnapshot.exists()){
+                                        //---------Specific item already exists
+                                        Log.d(TAG, "Item with barcode => " +
+                                                barcode.rawValue + " already exists");
+                                        Toast.makeText(thisHome, R.string.add_item_already_exists_error, Toast.LENGTH_LONG).show();
+                                        db.collection("users").document(user.getUid())
+                                                .collection("items")
+                                                .document(barcode.rawValue)
+                                                .update("updated", System.currentTimeMillis() / 1000L)
+                                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            @Override
+                                            public void onSuccess(Void aVoid) {
+                                                Log.d(TAG, "Timestamp of tem with barcode => " +
+                                                        barcode.rawValue + " updated");
+                                            }
+                                            }).addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+                                                Log.d(TAG, "Failed to update timestamp of tem with barcode => " +
+                                                        barcode.rawValue);
+                                            }
+                                        });
+                                    }
+                                    else {
+                                        //---------Specific item doesnt exist yet
+                                        Log.d(TAG, "Item with barcode => " +
+                                                barcode.rawValue + " doesn't yet exist");
+                                        Map<String, Object> data = new HashMap<>();
+                                        String text = itemName.getText().toString();
+                                        Log.d(TAG, "itemName: " + text);
+                                        if (text.matches("")){
+                                            Log.e(TAG, "Invalid item name");
+                                            Toast.makeText(context, R.string.add_item_invalid_name, Toast.LENGTH_LONG).show();
+                                            //addItemConfirm.dismiss();
+                                            return;
+                                        }
+                                        data.put("item_name", text);
+                                        text = itemQuantity.getText().toString();
+                                        Log.d(TAG, "itemquantity: " + text);
+                                        if (text.matches("") || text.matches("[^0-9]")){
+                                            Log.e(TAG, "Invalid item quantity");
+                                            Toast.makeText(context, R.string.add_item_invalid_number, Toast.LENGTH_LONG).show();
+                                            //addItemConfirm.dismiss();
+                                            return;
+                                        }
+                                        data.put("item_quantity", Integer.parseInt(text));
+                                        text = (String)categorySpinner.getSelectedItem();
+                                        Log.d(TAG, "Select item is: " + text);
+                                        data.put("item_category", text);
+
+                                        data.put("item_subcategory", "Outros");
+
+                                        data.put("timestamp", System.currentTimeMillis() / 1000L );
+                                        data.put("updated", System.currentTimeMillis() / 1000L );
+
+                                        userDocument.collection("items").document(barcode.rawValue).set(data)
+                                                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                    @Override
+                                                    public void onComplete(@NonNull Task<Void> task) {
+                                                        Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
+                                                    }
+                                                });
+                                        addItemConfirm.dismiss();
+                                    }
+                                }
+                            }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Log.e(TAG, "Error trying to retrieve item information");
+                                    Toast.makeText(thisHome, "Error contacting server", Toast.LENGTH_LONG).show();
+                                }
+                            });
+
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Log.e(TAG, "Error retrieving collection \"items\"");
+                }
+            });
+        }
+        else{
+            /*-------NO NETWORK CONNECTION-------*/
+            Log.e(TAG, "Tried to add item without network connection");
+            Toast.makeText(thisHome, R.string.no_network, Toast.LENGTH_LONG).show();
         }
     }
 

@@ -35,4 +35,5 @@
     <string name="add_item_already_exists_error">Item already exists</string>
     <string name="add_item_invalid_name">Invalid item name</string>
     <string name="add_item_invalid_number">Invalid item quantity</string>
+    <string name="invalid_barcode">Invalid barcode number</string>
 </resources>
