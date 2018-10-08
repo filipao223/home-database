@@ -11,33 +11,40 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
+        android:hint="@string/item_name_hint"
         android:text=""
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toStartOf="@+id/guideline_mid"
+        app:layout_constraintTop_toBottomOf="@+id/add_item_dialog_barcode" />
 
     <EditText
         android:id="@+id/add_item_dialog_quantity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
+        android:hint="@string/item_quantity_hint"
         android:text=""
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_mid"
         app:layout_constraintTop_toBottomOf="@+id/add_item_dialog_name" />
+
+    <EditText
+        android:id="@+id/add_item_dialog_barcode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
+        android:hint="Barcode"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_mid"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/add_item_dialog_confirm"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginTop="8dp"
         android:text="@string/add_dialog_button"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_mid"
         app:layout_constraintTop_toBottomOf="@+id/add_item_dialog_quantity" />
 
     <Button
@@ -47,6 +54,25 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="@string/add_dialog_cancel"
-        app:layout_constraintStart_toEndOf="@+id/add_item_dialog_confirm"
+        app:layout_constraintStart_toStartOf="@+id/guideline_mid"
         app:layout_constraintTop_toBottomOf="@+id/add_item_dialog_quantity" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guideline_mid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
+
+    <Spinner
+        android:id="@+id/add_item_dialog_spinner_category"
+        android:layout_width="130dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:entries="@android:color/background_dark"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/guideline_mid"
+        app:layout_constraintTop_toTopOf="parent" />
 </android.support.constraint.ConstraintLayout>

@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -24,10 +25,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,6 +54,7 @@ import com.google.firebase.storage.StorageReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class Home extends AppCompatActivity
@@ -89,6 +94,11 @@ public class Home extends AppCompatActivity
     private boolean itemInCollectionExists = false;
 
     private AlertDialog addItemConfirm;
+    EditText itemName;
+    EditText itemQuantity;
+    EditText itemBarcode;
+    Button confirmButton;
+    Button cancelButton;
 
     private NavigationView mNavigationView;
     private LinearLayout navHeader;
@@ -216,7 +226,8 @@ public class Home extends AppCompatActivity
                                     for(QueryDocumentSnapshot documentSnapshot: task.getResult()){
                                         if (documentSnapshot.getId().matches("testitem")) continue;
                                         Log.v(TAG, "Got item, barcode => " + (String)documentSnapshot.getId());
-                                        Item item = new Item("", (String)documentSnapshot.get("item_name"), (long)documentSnapshot.get("item_quantity"));
+                                        Item item = new Item("", (String)documentSnapshot.get("item_name"), (long)documentSnapshot.get("item_quantity")
+                                                ,documentSnapshot.getId(), (String)documentSnapshot.get("item_category"), (String)documentSnapshot.get("item_subcategory"));
                                         itemList.add(item);
                                     }
 
@@ -231,7 +242,7 @@ public class Home extends AppCompatActivity
             }
             else{
                 //Placeholder item, without adapter, swipe to refresh doesnt work
-                itemList.add(new Item("", "empty", 0));
+                itemList.add(new Item("", "empty", 0, "919234", "Food", "Pasta"));
                 cardsAdapter = new ItemsCardsAdapter(itemList, thisHome, imagesRef);
                 recyclerViewItems.setAdapter(cardsAdapter);
                 Toast.makeText(this, R.string.no_network, Toast.LENGTH_LONG).show();
@@ -299,7 +310,8 @@ public class Home extends AppCompatActivity
                                 for(QueryDocumentSnapshot documentSnapshot: task.getResult()){
                                     if (documentSnapshot.getId().matches("testitem")) continue;
                                     Log.v(TAG, "Got item, barcode => " + (String)documentSnapshot.getId());
-                                    Item item = new Item("", (String)documentSnapshot.get("item_name"), (long)documentSnapshot.get("item_quantity"));
+                                    Item item = new Item("", (String)documentSnapshot.get("item_name"), (long)documentSnapshot.get("item_quantity")
+                                            ,documentSnapshot.getId(), (String)documentSnapshot.get("item_category"), (String)documentSnapshot.get("item_subcategory"));
                                     itemList.add(item);
                                 }
 
@@ -427,6 +439,7 @@ public class Home extends AppCompatActivity
         return true;
     }
 
+    //After the barcode scan activity ends, it starts this method
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if ( requestCode == RC_BARCODE_SCAN){
@@ -439,10 +452,64 @@ public class Home extends AppCompatActivity
                     final AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
                     final View mView = getLayoutInflater().inflate(R.layout.item_add_dialog, null);
 
-                    final EditText itemName = mView.findViewById(R.id.add_item_dialog_name); itemName.setHint(R.string.item_name_hint);
-                    final EditText itemQuantity = mView.findViewById(R.id.add_item_dialog_quantity); itemQuantity.setHint(R.string.item_quantity_hint);
-                    final Button confirmButton = mView.findViewById(R.id.add_item_dialog_confirm);
-                    final Button cancelButton = mView.findViewById(R.id.add_item_dialog_cancel);
+                    /*Default locale*/
+                    Locale currentLocale = Locale.getDefault();
+                    final String language = currentLocale.getLanguage();
+
+                    /*Get main category spinner*/
+                    final Spinner categorySpinner = mView.findViewById(R.id.add_item_dialog_spinner_category);
+                    categorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                            ((TextView) view).setTextColor(Color.BLACK);
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> adapterView) {
+
+                        }
+                    });
+
+                    final List<String> categories = new ArrayList<>();
+                    final ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, categories);
+
+                    /*Get categories from server*/
+                    db.collection("categories").get()
+                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                @Override
+                                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                    if (queryDocumentSnapshots.isEmpty()){
+                                        Log.e(TAG, "No categories found in database");
+                                        Toast.makeText(thisHome, R.string.no_categories_db, Toast.LENGTH_LONG).show();
+                                    }
+                                    else{
+                                        for(DocumentSnapshot documents: queryDocumentSnapshots.getDocuments()){
+                                            if (documents.getId().matches("testcategory")) continue;
+                                            Object tryCategoryLanguage = documents.get("name_"+language);
+                                            if (tryCategoryLanguage != null){
+                                                Log.d(TAG, "Found localized category (" + language + "_" + tryCategoryLanguage + ")");
+                                                categories.add((String)tryCategoryLanguage);
+                                            }
+                                            else{
+                                                Log.d(TAG, "Did not found localized category (" + language + "_" + tryCategoryLanguage + ")");
+                                                categories.add(documents.getId());
+                                            }
+                                        }
+
+                                        dataAdapter.notifyDataSetChanged();
+                                    }
+                                }
+                            });
+
+                    dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    categorySpinner.setAdapter(dataAdapter);
+                    categorySpinner.setSelection(0);
+
+                    itemName = mView.findViewById(R.id.add_item_dialog_name);
+                    itemQuantity = mView.findViewById(R.id.add_item_dialog_quantity);
+                    itemBarcode = mView.findViewById(R.id.add_item_dialog_barcode);
+                    confirmButton = mView.findViewById(R.id.add_item_dialog_confirm);
+                    cancelButton = mView.findViewById(R.id.add_item_dialog_cancel);
 
                     cancelButton.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -455,71 +522,87 @@ public class Home extends AppCompatActivity
                         @Override
                         public void onClick(View view) {
                             /*---------NEW CODE-------------*/
-                            db.collection("users").document(user.getUid())
-                                    .collection("items")
-                                    .get()
-                                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                                        @Override
-                                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                                            //------------Items exists
-                                            Log.d(TAG, "Items collection exists for user " + user.getUid());
-                                            db.collection("users").document(user.getUid())
-                                                    .collection("items")
-                                                    .document(barcode.rawValue)
-                                                    .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                                                @Override
-                                                public void onSuccess(DocumentSnapshot documentSnapshot) {
-                                                    if (documentSnapshot.exists()){
-                                                        //---------Specific item already exists
-                                                        Log.d(TAG, "Item with barcode => " +
-                                                                barcode.rawValue + " already exists");
-                                                    }
-                                                    else {
-                                                        //---------Specific item doesnt exist yet
-                                                        Log.d(TAG, "Item with barcode => " +
-                                                                barcode.rawValue + " doesn't yet exist");
-                                                        Map<String, Object> data = new HashMap<>();
-                                                        String text = itemName.getText().toString();
-                                                        Log.d(TAG, "itemName: " + text);
-                                                        if (text.matches("")){
-                                                            Toast.makeText(context, "Invalid item name", Toast.LENGTH_LONG).show();
-                                                            addItemConfirm.dismiss();
-                                                            return;
+                            if (isNetworkConnected()){
+                                db.collection("users").document(user.getUid())
+                                        .collection("items")
+                                        .get()
+                                        .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                            @Override
+                                            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                                //------------Items exists
+                                                Log.d(TAG, "Items collection exists for user " + user.getUid());
+                                                db.collection("users").document(user.getUid())
+                                                        .collection("items")
+                                                        .document(barcode.rawValue)
+                                                        .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                                                    @Override
+                                                    public void onSuccess(DocumentSnapshot documentSnapshot) {
+                                                        if (documentSnapshot.exists()){
+                                                            //---------Specific item already exists
+                                                            Log.d(TAG, "Item with barcode => " +
+                                                                    barcode.rawValue + " already exists");
+                                                            Toast.makeText(thisHome, R.string.add_item_already_exists_error, Toast.LENGTH_LONG).show();
                                                         }
-                                                        data.put("item_name", text);
-                                                        text = itemQuantity.getText().toString();
-                                                        Log.d(TAG, "itemquantity: " + text);
-                                                        if (text.matches("") || text.matches("[^0-9]")){
-                                                            Toast.makeText(context, "Invalid item quantity", Toast.LENGTH_LONG).show();
-                                                            addItemConfirm.dismiss();
-                                                            return;
-                                                        }
-                                                        data.put("item_quantity", Integer.parseInt(text));
-                                                        userDocument.collection("items").document(barcode.rawValue).set(data)
-                                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                                                @Override
-                                                                public void onComplete(@NonNull Task<Void> task) {
-                                                                    Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
-                                                                }
-                                                            });
-                                                        addItemConfirm.dismiss();
-                                                    }
-                                                }
-                                                }).addOnFailureListener(new OnFailureListener() {
-                                                @Override
-                                                public void onFailure(@NonNull Exception e) {
-                                                    Log.e(TAG, "Error trying to retrieve item information");
-                                                    Toast.makeText(thisHome, "Error contacting server", Toast.LENGTH_LONG).show();
-                                                }
-                                            });
+                                                        else {
+                                                            //---------Specific item doesnt exist yet
+                                                            Log.d(TAG, "Item with barcode => " +
+                                                                    barcode.rawValue + " doesn't yet exist");
+                                                            Map<String, Object> data = new HashMap<>();
+                                                            String text = itemName.getText().toString();
+                                                            Log.d(TAG, "itemName: " + text);
+                                                            if (text.matches("")){
+                                                                Log.e(TAG, "Invalid item name");
+                                                                Toast.makeText(context, R.string.add_item_invalid_name, Toast.LENGTH_LONG).show();
+                                                                //addItemConfirm.dismiss();
+                                                                return;
+                                                            }
+                                                            data.put("item_name", text);
+                                                            text = itemQuantity.getText().toString();
+                                                            Log.d(TAG, "itemquantity: " + text);
+                                                            if (text.matches("") || text.matches("[^0-9]")){
+                                                                Log.e(TAG, "Invalid item quantity");
+                                                                Toast.makeText(context, R.string.add_item_invalid_number, Toast.LENGTH_LONG).show();
+                                                                //addItemConfirm.dismiss();
+                                                                return;
+                                                            }
+                                                            data.put("item_quantity", Integer.parseInt(text));
+                                                            text = (String)categorySpinner.getSelectedItem();
+                                                            Log.d(TAG, "Select item is: " + text);
+                                                            data.put("item_category", text);
 
-                                        }
-                                    }).addOnFailureListener(new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception e) {
-                                            Log.e(TAG, "Error retrieving collection \"items\"");
-                                        }
-                                    });
+                                                            data.put("item_subcategory", "Outros");
+
+                                                            userDocument.collection("items").document(barcode.rawValue).set(data)
+                                                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                                        @Override
+                                                                        public void onComplete(@NonNull Task<Void> task) {
+                                                                            Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
+                                                                        }
+                                                                    });
+                                                            addItemConfirm.dismiss();
+                                                        }
+                                                    }
+                                                }).addOnFailureListener(new OnFailureListener() {
+                                                    @Override
+                                                    public void onFailure(@NonNull Exception e) {
+                                                        Log.e(TAG, "Error trying to retrieve item information");
+                                                        Toast.makeText(thisHome, "Error contacting server", Toast.LENGTH_LONG).show();
+                                                    }
+                                                });
+
+                                            }
+                                        }).addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        Log.e(TAG, "Error retrieving collection \"items\"");
+                                    }
+                                });
+                            }
+                            else{
+                                /*-------NO NETWORK CONNECTION-------*/
+                                Log.e(TAG, "Tried to add item without network connection");
+                                Toast.makeText(thisHome, R.string.no_network, Toast.LENGTH_LONG).show();
+                            }
                         }
                     });
 
@@ -538,47 +621,6 @@ public class Home extends AppCompatActivity
                 }
             }
         }
-    }
-
-    private void checkIfItemAlreadyExists(final String barcode) {
-        userDocument = db.collection("users").document(user.getUid());
-        userDocument.collection("items").document(barcode).get()
-                .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                        DocumentSnapshot document = task.getResult();
-                        if (document.exists()){
-                            Log.d(TAG, "Item " + barcode + " in collection \"items\" exists");
-                            itemInCollectionExists = true;
-                        }
-                        else{
-                            Log.d(TAG, "Item " + barcode + " in collection \"items\" does not exist");
-                            itemInCollectionExists = false;
-                        }
-                    }
-                });
-    }
-
-    private void checkForItemCollection() {
-        Log.d(TAG, "userDocument is : " + userDocument.getId());
-        db.collection("users").document(user.getUid()).collection("items")
-                .document("testitem")
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                        DocumentSnapshot document = task.getResult();
-                        if (document.exists()){
-                            Log.d(TAG, "Collection \"items\" exists");
-                            itemCollectionExists = true;
-                        }
-                        else{
-                            Log.d(TAG, "Collection \"items\" does not exist");
-                            itemCollectionExists = false;
-                        }
-                    }
-                });
-
     }
 
     private boolean isNetworkConnected() {

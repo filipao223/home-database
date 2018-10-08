@@ -50,6 +50,10 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
     @Override
     public void onBindViewHolder(final CardViewHolder postsCardView, int i) {
         postsCardView.itemName.setText(items.get(i).getItem_name());
+        postsCardView.itemBarcode.setText(items.get(i).getItemBarcode());
+        postsCardView.itemCategory.setText(items.get(i).getCategory());
+        postsCardView.itemSubCategory.setText(items.get(i).getSubCategory());
+        postsCardView.itemQuantity.setText(String.valueOf(items.get(i).getItem_quantity()));
         //Get url of image
         // Load the image using Glide
         Log.i(TAG, "Getting image for item \"" + items.get(postsCardView.getAdapterPosition()).getItem_name() +
@@ -96,12 +100,20 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
     public static class CardViewHolder extends RecyclerView.ViewHolder {
 
         TextView itemName;
+        TextView itemBarcode;
+        TextView itemCategory;
+        TextView itemSubCategory;
+        TextView itemQuantity;
         ImageView itemPhoto;
 
         CardViewHolder(View itemView) {
             super(itemView);
             itemName = itemView.findViewById(R.id.home_card_item_name);
+            itemBarcode = itemView.findViewById(R.id.home_card_item_barcode);
             itemPhoto = itemView.findViewById(R.id.home_card_item_photo);
+            itemCategory = itemView.findViewById(R.id.home_card_item_category);
+            itemSubCategory = itemView.findViewById(R.id.home_card_item_subcategory);
+            itemQuantity = itemView.findViewById(R.id.home_card_item_quantity);
         }
     }
 }

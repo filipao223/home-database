@@ -31,4 +31,8 @@
     <string name="card_default_quantity">4</string>
     <string name="card_default_barcode">91233452</string>
     <string name="long_test_string">Very long test string to test limits</string>
+    <string name="no_categories_db">No categories found, try again later</string>
+    <string name="add_item_already_exists_error">Item already exists</string>
+    <string name="add_item_invalid_name">Invalid item name</string>
+    <string name="add_item_invalid_number">Invalid item quantity</string>
 </resources>
