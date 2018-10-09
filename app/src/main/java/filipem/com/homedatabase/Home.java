@@ -94,6 +94,7 @@ public class Home extends AppCompatActivity
 
     private boolean itemCollectionExists = false;
     private boolean itemInCollectionExists = false;
+    private boolean nextItemIsNew = false;
 
     private AlertDialog addItemConfirm;
     EditText itemName;
@@ -382,13 +383,24 @@ public class Home extends AppCompatActivity
                                 updateItemTimestamp(barcode);
 
                                 //Push data to database
-                                userDocument.collection("items").document(barcode.rawValue).set(thisHome.data)
-                                        .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                            @Override
-                                            public void onComplete(@NonNull Task<Void> task) {
-                                                Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
-                                            }
-                                        });
+                                if (nextItemIsNew){
+                                    userDocument.collection("items").document(barcode.rawValue).set(thisHome.data)
+                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> task) {
+                                                    Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
+                                                }
+                                            });
+                                }
+                                else{
+                                    userDocument.collection("items").document(barcode.rawValue).update(thisHome.data)
+                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> task) {
+                                                    Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
+                                                }
+                                            });
+                                }
                                 addItemConfirm.dismiss();
                             }
                         }
@@ -700,13 +712,24 @@ public class Home extends AppCompatActivity
                             updateItemTimestamp(barcode);
 
                             //Push data to database
-                            userDocument.collection("items").document(barcode.rawValue).set(thisHome.data)
-                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                        @Override
-                                        public void onComplete(@NonNull Task<Void> task) {
-                                            Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
-                                        }
-                                    });
+                            if (nextItemIsNew){
+                                userDocument.collection("items").document(barcode.rawValue).set(thisHome.data)
+                                        .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<Void> task) {
+                                                Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
+                                            }
+                                        });
+                            }
+                            else{
+                                userDocument.collection("items").document(barcode.rawValue).update(thisHome.data)
+                                        .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<Void> task) {
+                                                Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
+                                            }
+                                        });
+                            }
                             addItemConfirm.dismiss();
                         }
                     });
@@ -747,6 +770,7 @@ public class Home extends AppCompatActivity
                                 public void onSuccess(DocumentSnapshot documentSnapshot) {
                                     if (documentSnapshot.exists()){
                                         //---------Specific item already exists
+                                        nextItemIsNew = false;
                                         Log.d(TAG, "Item with barcode => " +
                                                 barcode.rawValue + " already exists");
                                         Toast.makeText(thisHome, R.string.add_item_already_exists_error, Toast.LENGTH_LONG).show();
@@ -762,6 +786,7 @@ public class Home extends AppCompatActivity
                                     }
                                     else {
                                         //---------Specific item doesnt exist yet
+                                        nextItemIsNew = true;
                                         Log.d(TAG, "Item with barcode => " +
                                                 barcode.rawValue + " doesn't yet exist");
                                         //updateItemData(categorySpinner, barcode);
@@ -848,7 +873,9 @@ public class Home extends AppCompatActivity
 
         data.put("item_subcategory", "Outros");
 
-        data.put("timestamp", System.currentTimeMillis() / 1000L );
+        if (nextItemIsNew){
+            data.put("timestamp", System.currentTimeMillis() / 1000L );
+        }
         data.put("updated", System.currentTimeMillis() / 1000L );
     }
 
