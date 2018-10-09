@@ -1,6 +1,8 @@
 package filipem.com.homedatabase;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.app.Activity;
 import android.util.Log;
@@ -43,16 +45,22 @@ public class Login extends Activity {
             Log.d(TAG, "onAuthStateChanged:signed_out");
         }
 
-        List<AuthUI.IdpConfig> providers = Arrays.asList(
-                new AuthUI.IdpConfig.EmailBuilder().build(),
-                new AuthUI.IdpConfig.GoogleBuilder().build());
+       if (isNetworkConnected()){
+           List<AuthUI.IdpConfig> providers = Arrays.asList(
+                   new AuthUI.IdpConfig.EmailBuilder().build(),
+                   new AuthUI.IdpConfig.GoogleBuilder().build());
 
-        startActivityForResult(
-                AuthUI.getInstance()
-                        .createSignInIntentBuilder()
-                        .setAvailableProviders(providers)
-                        .build(),
-                RC_SIGN_IN);
+           startActivityForResult(
+                   AuthUI.getInstance()
+                           .createSignInIntentBuilder()
+                           .setAvailableProviders(providers)
+                           .build(),
+                   RC_SIGN_IN);
+       }
+       else{
+           Toast.makeText(this, R.string.no_network, Toast.LENGTH_SHORT).show();
+           finish();
+       }
 
     }
 
@@ -84,6 +92,11 @@ public class Login extends Activity {
                 }
             }
         }
+    }
+
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        return cm.getActiveNetworkInfo() != null;
     }
 
 }
