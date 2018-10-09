@@ -45,16 +45,30 @@
         android:layout_marginTop="8dp"
         android:text="@string/add_dialog_button"
         app:layout_constraintEnd_toStartOf="@+id/guideline_mid"
+        app:layout_constraintStart_toStartOf="@+id/guideline_mid"
         app:layout_constraintTop_toBottomOf="@+id/add_item_dialog_quantity" />
 
     <Button
         android:id="@+id/add_item_dialog_cancel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginTop="8dp"
         android:text="@string/add_dialog_cancel"
-        app:layout_constraintStart_toStartOf="@+id/guideline_mid"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_right"
+        app:layout_constraintStart_toStartOf="@+id/guideline_right"
+        app:layout_constraintTop_toBottomOf="@+id/add_item_dialog_quantity" />
+
+    <Button
+        android:id="@+id/add_item_dialog_check_barcode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/add_dialog_check_item"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_left"
+        app:layout_constraintStart_toStartOf="@+id/guideline_left"
         app:layout_constraintTop_toBottomOf="@+id/add_item_dialog_quantity" />
 
     <android.support.constraint.Guideline
@@ -75,4 +89,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/guideline_mid"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guideline_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.20666" />
+    <android.support.constraint.Guideline
+        android:id="@+id/guideline_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.79333" />
 </android.support.constraint.ConstraintLayout>

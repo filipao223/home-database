@@ -101,6 +101,7 @@ public class Home extends AppCompatActivity
     EditText itemBarcode;
     Button confirmButton;
     Button cancelButton;
+    Button checkButton;
 
     private NavigationView mNavigationView;
     private LinearLayout navHeader;
@@ -262,7 +263,7 @@ public class Home extends AppCompatActivity
                 public void onClick(View view) {
 
                     final AlertDialog.Builder mBuilder = new AlertDialog.Builder(thisHome);
-                    final View mView = getLayoutInflater().inflate(R.layout.item_add_dialog, null);
+                    final View mView = getLayoutInflater().inflate(R.layout.item_add_dialog_hand, null);
 
                     /*Default locale*/
                     Locale currentLocale = Locale.getDefault();
@@ -322,11 +323,29 @@ public class Home extends AppCompatActivity
                     itemBarcode = mView.findViewById(R.id.add_item_dialog_barcode);
                     confirmButton = mView.findViewById(R.id.add_item_dialog_confirm);
                     cancelButton = mView.findViewById(R.id.add_item_dialog_cancel);
+                    checkButton = mView.findViewById(R.id.add_item_dialog_check_barcode);
 
                     cancelButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
                             addItemConfirm.dismiss();
+                        }
+                    });
+
+                    checkButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            String barcodeString = itemBarcode.getText().toString();
+
+                            if (barcodeString.matches("") || barcodeString.matches("[^0-9]")){
+                                Toast.makeText(thisHome, R.string.invalid_barcode, Toast.LENGTH_LONG).show();
+                            }
+                            else{
+                                Barcode barcode = new Barcode();
+                                barcode.rawValue = barcodeString;
+
+                                addItemDialogHandler(barcode, categorySpinner, false);
+                            }
                         }
                     });
 
