@@ -88,6 +88,8 @@ public class Home extends AppCompatActivity
     private Home thisHome;
 
     private List<Item> itemList = new ArrayList<>();
+    List<String> categories;
+    ArrayAdapter<String> dataAdapter;
 
     private boolean itemCollectionExists = false;
     private boolean itemInCollectionExists = false;
@@ -272,8 +274,8 @@ public class Home extends AppCompatActivity
                         }
                     });
 
-                    final List<String> categories = new ArrayList<>();
-                    final ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, categories);
+                    categories = new ArrayList<>();
+                    dataAdapter = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, categories);
 
                     /*Get categories from server*/
                     db.collection("categories").get()
@@ -569,8 +571,8 @@ public class Home extends AppCompatActivity
                         }
                     });
 
-                    final List<String> categories = new ArrayList<>();
-                    final ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, categories);
+                    categories = new ArrayList<>();
+                    dataAdapter = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, categories);
 
                     /*Get categories from server*/
                     db.collection("categories").get()
@@ -620,6 +622,7 @@ public class Home extends AppCompatActivity
                     confirmButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
+
                             addItemDialogAcceptOnClick(barcode, categorySpinner);
 
                         }
@@ -664,6 +667,9 @@ public class Home extends AppCompatActivity
                                         Log.d(TAG, "Item with barcode => " +
                                                 barcode.rawValue + " already exists");
                                         Toast.makeText(thisHome, R.string.add_item_already_exists_error, Toast.LENGTH_LONG).show();
+
+                                        updateItemData(categorySpinner, barcode);
+
                                         db.collection("users").document(user.getUid())
                                                 .collection("items")
                                                 .document(barcode.rawValue)
@@ -686,42 +692,7 @@ public class Home extends AppCompatActivity
                                         //---------Specific item doesnt exist yet
                                         Log.d(TAG, "Item with barcode => " +
                                                 barcode.rawValue + " doesn't yet exist");
-                                        Map<String, Object> data = new HashMap<>();
-                                        String text = itemName.getText().toString();
-                                        Log.d(TAG, "itemName: " + text);
-                                        if (text.matches("")){
-                                            Log.e(TAG, "Invalid item name");
-                                            Toast.makeText(context, R.string.add_item_invalid_name, Toast.LENGTH_LONG).show();
-                                            //addItemConfirm.dismiss();
-                                            return;
-                                        }
-                                        data.put("item_name", text);
-                                        text = itemQuantity.getText().toString();
-                                        Log.d(TAG, "itemquantity: " + text);
-                                        if (text.matches("") || text.matches("[^0-9]")){
-                                            Log.e(TAG, "Invalid item quantity");
-                                            Toast.makeText(context, R.string.add_item_invalid_number, Toast.LENGTH_LONG).show();
-                                            //addItemConfirm.dismiss();
-                                            return;
-                                        }
-                                        data.put("item_quantity", Integer.parseInt(text));
-                                        text = (String)categorySpinner.getSelectedItem();
-                                        Log.d(TAG, "Select item is: " + text);
-                                        data.put("item_category", text);
-
-                                        data.put("item_subcategory", "Outros");
-
-                                        data.put("timestamp", System.currentTimeMillis() / 1000L );
-                                        data.put("updated", System.currentTimeMillis() / 1000L );
-
-                                        userDocument.collection("items").document(barcode.rawValue).set(data)
-                                                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                                    @Override
-                                                    public void onComplete(@NonNull Task<Void> task) {
-                                                        Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
-                                                    }
-                                                });
-                                        addItemConfirm.dismiss();
+                                        updateItemData(categorySpinner, barcode);
                                     }
                                 }
                             }).addOnFailureListener(new OnFailureListener() {
@@ -745,6 +716,45 @@ public class Home extends AppCompatActivity
             Log.e(TAG, "Tried to add item without network connection");
             Toast.makeText(thisHome, R.string.no_network, Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void updateItemData(Spinner categorySpinner, Barcode barcode) {
+        Map<String, Object> data = new HashMap<>();
+        String text = itemName.getText().toString();
+        Log.d(TAG, "itemName: " + text);
+        if (text.matches("")){
+            Log.e(TAG, "Invalid item name");
+            Toast.makeText(context, R.string.add_item_invalid_name, Toast.LENGTH_LONG).show();
+            //addItemConfirm.dismiss();
+            return;
+        }
+        data.put("item_name", text);
+        text = itemQuantity.getText().toString();
+        Log.d(TAG, "itemquantity: " + text);
+        if (text.matches("") || text.matches("[^0-9]")){
+            Log.e(TAG, "Invalid item quantity");
+            Toast.makeText(context, R.string.add_item_invalid_number, Toast.LENGTH_LONG).show();
+            //addItemConfirm.dismiss();
+            return;
+        }
+        data.put("item_quantity", Integer.parseInt(text));
+        text = (String)categorySpinner.getSelectedItem();
+        Log.d(TAG, "Select item is: " + text);
+        data.put("item_category", text);
+
+        data.put("item_subcategory", "Outros");
+
+        data.put("timestamp", System.currentTimeMillis() / 1000L );
+        data.put("updated", System.currentTimeMillis() / 1000L );
+
+        userDocument.collection("items").document(barcode.rawValue).set(data)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
+                    }
+                });
+        addItemConfirm.dismiss();
     }
 
     private boolean isNetworkConnected() {
