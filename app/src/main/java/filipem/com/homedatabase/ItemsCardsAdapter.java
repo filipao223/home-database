@@ -36,6 +36,7 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
 
     ListPreloader.PreloadSizeProvider sizeProvider = new ViewPreloadSizeProvider();
 
+
     ItemsCardsAdapter(List<Item> items, Home mainActivity, StorageReference storageRef){
         this.items = items;
         this.mainActivity = mainActivity;
@@ -83,6 +84,13 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
                         "=> " + storageRef.child(items.get(postsCardView.getAdapterPosition()).getItem_name()+".jpeg").toString());
             }
         });*/
+        postsCardView.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                mainActivity.itemLongClick(postsCardView.itemView);
+                return true;
+            }
+        });
     }
 
     @Override

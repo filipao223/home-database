@@ -879,6 +879,12 @@ public class Home extends AppCompatActivity
         data.put("updated", System.currentTimeMillis() / 1000L );
     }
 
+    protected void itemLongClick(View view){
+        //Get card data
+        String barcode = ((TextView)view.findViewById(R.id.home_card_item_barcode)).getText().toString();
+        Toast.makeText(context, "Long pressed item with barcode => " + barcode, Toast.LENGTH_SHORT).show();
+    }
+
     private boolean isNetworkConnected() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         return cm.getActiveNetworkInfo() != null;
