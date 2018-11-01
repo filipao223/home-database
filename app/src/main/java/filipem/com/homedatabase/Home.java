@@ -890,7 +890,7 @@ public class Home extends AppCompatActivity
         Toast.makeText(context, "Long pressed item with barcode => " + barcode, Toast.LENGTH_SHORT).show();
     }
 
-    protected void itemClick(View view, ItemsCardsAdapter.CardViewHolder holder){
+    protected void itemClick(View view, final ItemsCardsAdapter.CardViewHolder holder){
         switch (view.getId()){
             case R.id.home_card_item_add:
                 //An add enables the 'done' icon
@@ -911,25 +911,49 @@ public class Home extends AppCompatActivity
                 //Add class to change to list
                 currentlyEditing.add(item);
                 break;
+
+            case R.id.home_card_item_remove:
+                //Remove one item to quantity in textviews (if not already 0)
+                textView = holder.itemView.findViewById(R.id.home_card_item_quantity);
+                current = Integer.parseInt(textView.getText().toString());
+                if (current > 0){
+                    //A remove enables the done icon
+                    holder.pendingChanges = true;
+                    ((ImageView)holder.itemView.findViewById(R.id.home_card_item_done)).setBackgroundResource(R.drawable.baseline_check_black_18dp);
+                    current -=1;
+                    ((TextView)holder.itemView.findViewById(R.id.home_card_item_quantity)).setText(String.valueOf(current));
+
+                    //Remove one item from actual class
+                    item = cardsAdapter.items.get(holder.getAdapterPosition());
+                    item.setItem_quantity(item.getItem_quantity()-1);
+                }
+                break;
+
             case R.id.home_card_item_done:
                 //Check if there are changes to make in this card
                 if (holder.pendingChanges){
                     //Make the changes
-                    Map<String, Object> data = new HashMap<>();
-                    data.put("item_quantity", cardsAdapter.items.get(holder.getAdapterPosition()).getItem_quantity());
-                    db.collection("users").document(user.getUid())
-                            .collection("items").document(cardsAdapter.items.get(holder.getAdapterPosition()).getItemBarcode())
-                            .update(data).addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            Toast.makeText(context, R.string.item_update, Toast.LENGTH_LONG).show();
-                        }
-                    });
-
-                    //Set boolean and background to default
-                    holder.pendingChanges = false;
-                    ((ImageView)holder.itemView.findViewById(R.id.home_card_item_done)).setBackgroundResource(R.drawable.baseline_check_black_18dp_opaque);
+                    if (isNetworkConnected()){
+                        Map<String, Object> data = new HashMap<>();
+                        data.put("item_quantity", cardsAdapter.items.get(holder.getAdapterPosition()).getItem_quantity());
+                        db.collection("users").document(user.getUid())
+                                .collection("items").document(cardsAdapter.items.get(holder.getAdapterPosition()).getItemBarcode())
+                                .update(data).addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                Toast.makeText(context, R.string.item_update, Toast.LENGTH_LONG).show();
+                                //Set boolean and background to default
+                                holder.pendingChanges = false;
+                                ((ImageView)holder.itemView.findViewById(R.id.home_card_item_done)).setBackgroundResource(R.drawable.baseline_check_black_18dp_opaque);
+                            }
+                        });
+                    }
+                    else{
+                        Log.e(TAG, "Tried to update item without internet connection");
+                        Toast.makeText(context, R.string.no_network, Toast.LENGTH_LONG).show();
+                    }
                 }
+                break;
         }
     }
 
