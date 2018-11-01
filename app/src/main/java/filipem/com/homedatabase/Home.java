@@ -52,6 +52,8 @@ import com.google.firebase.storage.StorageReference;
 
 import net.cachapa.expandablelayout.ExpandableLayout;
 
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -90,6 +92,7 @@ public class Home extends AppCompatActivity
     private Home thisHome;
 
     private List<Item> itemList = new ArrayList<>();
+    private List<Item> currentlyEditing = new ArrayList<>();
     List<String> categories;
     ArrayAdapter<String> dataAdapter;
     Map<String, Object> data;
@@ -885,6 +888,49 @@ public class Home extends AppCompatActivity
         //Get card data
         String barcode = ((TextView)view.findViewById(R.id.home_card_item_barcode)).getText().toString();
         Toast.makeText(context, "Long pressed item with barcode => " + barcode, Toast.LENGTH_SHORT).show();
+    }
+
+    protected void itemClick(View view, ItemsCardsAdapter.CardViewHolder holder){
+        switch (view.getId()){
+            case R.id.home_card_item_add:
+                //An add enables the 'done' icon
+                holder.pendingChanges = true;
+                ((ImageView)holder.itemView.findViewById(R.id.home_card_item_done)).setBackgroundResource(R.drawable.baseline_check_black_18dp);
+
+                //Add one item to quantity in textviews
+                //Current quantity
+                TextView textView = holder.itemView.findViewById(R.id.home_card_item_quantity);
+                int current = Integer.parseInt(textView.getText().toString());
+                current+=1;
+                ((TextView)holder.itemView.findViewById(R.id.home_card_item_quantity)).setText(String.valueOf(current));
+
+                //Add one item to actual class
+                Item item = cardsAdapter.items.get(holder.getAdapterPosition());
+                item.setItem_quantity(item.getItem_quantity()+1);
+
+                //Add class to change to list
+                currentlyEditing.add(item);
+                break;
+            case R.id.home_card_item_done:
+                //Check if there are changes to make in this card
+                if (holder.pendingChanges){
+                    //Make the changes
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("item_quantity", cardsAdapter.items.get(holder.getAdapterPosition()).getItem_quantity());
+                    db.collection("users").document(user.getUid())
+                            .collection("items").document(cardsAdapter.items.get(holder.getAdapterPosition()).getItemBarcode())
+                            .update(data).addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Toast.makeText(context, R.string.item_update, Toast.LENGTH_LONG).show();
+                        }
+                    });
+
+                    //Set boolean and background to default
+                    holder.pendingChanges = false;
+                    ((ImageView)holder.itemView.findViewById(R.id.home_card_item_done)).setBackgroundResource(R.drawable.baseline_check_black_18dp_opaque);
+                }
+        }
     }
 
     private boolean isNetworkConnected() {

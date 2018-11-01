@@ -38,4 +38,5 @@
     <string name="invalid_barcode">Invalid barcode number</string>
     <string name="barcode_hint">Barcode</string>
     <string name="add_dialog_check_item">Check item</string>
+    <string name="item_update">Updated item</string>
 </resources>

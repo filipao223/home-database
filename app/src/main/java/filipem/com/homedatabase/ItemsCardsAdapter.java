@@ -80,6 +80,34 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
                         .error(R.drawable.round_face_24))
                 .into(postsCardView.itemPhoto);
 
+        postsCardView.edit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mainActivity.itemClick(view, postsCardView);
+            }
+        });
+
+        postsCardView.add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mainActivity.itemClick(view, postsCardView);
+            }
+        });
+
+        postsCardView.done.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mainActivity.itemClick(view, postsCardView);
+            }
+        });
+
+        postsCardView.remove.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mainActivity.itemClick(view, postsCardView);
+            }
+        });
+
         postsCardView.expand.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -148,6 +176,7 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
         ImageView add;
         ImageView remove;
         ImageView expand;
+        boolean pendingChanges = false;
 
         CardViewHolder(View itemView) {
             super(itemView);

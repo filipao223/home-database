@@ -135,7 +135,7 @@
             app:layout_constraintEnd_toStartOf="@+id/guideline_expand_leftmid"
             app:layout_constraintStart_toStartOf="@+id/guideline_expand_leftmid"
             app:layout_constraintTop_toTopOf="@+id/home_card_item_edit"
-            app:srcCompat="@drawable/baseline_check_black_18dp" />
+            app:srcCompat="@drawable/baseline_check_black_18dp_opaque" />
 
         <ImageView
             android:id="@+id/home_card_item_add"
