@@ -13,7 +13,8 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -41,6 +42,8 @@ dependencies {
     // FirebaseUI Storage only
     implementation 'com.firebaseui:firebase-ui-storage:4.1.0'
     implementation 'me.zhanghai.android.materialprogressbar:library:1.4.2'
+    //Card view expansion
+    implementation 'net.cachapa.expandablelayout:expandablelayout:2.9.2'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
 
     testImplementation 'junit:junit:4.12'

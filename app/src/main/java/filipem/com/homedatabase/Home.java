@@ -50,6 +50,8 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import net.cachapa.expandablelayout.ExpandableLayout;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -78,7 +80,7 @@ public class Home extends AppCompatActivity
     private StorageReference storageRef = storage.getReference();
     private StorageReference imagesRef = storageRef.child("itemImages");
 
-    private RecyclerView recyclerViewItems;
+    protected RecyclerView recyclerViewItems;
     private SwipeRefreshLayout mSwipeRefreshLayoutItems;
 
     private TextView noItemsText;

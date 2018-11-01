@@ -71,15 +71,14 @@
             android:id="@+id/home_card_item_quantity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
             android:layout_marginEnd="24dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginTop="8dp"
             android:text="@string/card_default_quantity"
             android:textSize="20sp"
             android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/guideline"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="@+id/guideline" />
 
         <TextView
             android:id="@+id/home_card_item_barcode"
@@ -111,6 +110,89 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             app:layout_constraintGuide_percent="0.45" />
+
+        <ImageView
+            android:id="@+id/home_card_item_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/guideline_expand_left"
+            app:layout_constraintStart_toStartOf="@+id/guideline_expand_left"
+            app:layout_constraintTop_toBottomOf="@+id/home_card_item_barcode"
+            app:srcCompat="@drawable/baseline_create_black_18dp" />
+
+        <ImageView
+            android:id="@+id/home_card_item_done"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/guideline_expand_leftmid"
+            app:layout_constraintStart_toStartOf="@+id/guideline_expand_leftmid"
+            app:layout_constraintTop_toTopOf="@+id/home_card_item_edit"
+            app:srcCompat="@drawable/baseline_check_black_18dp" />
+
+        <ImageView
+            android:id="@+id/home_card_item_add"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintEnd_toStartOf="@+id/guideline_expand_rightmid"
+            app:layout_constraintStart_toStartOf="@+id/guideline_expand_rightmid"
+            app:layout_constraintTop_toTopOf="@+id/home_card_item_edit"
+            app:srcCompat="@drawable/baseline_add_black_18dp" />
+
+        <ImageView
+            android:id="@+id/home_card_item_remove"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintEnd_toStartOf="@+id/guideline_expand_right"
+            app:layout_constraintStart_toStartOf="@+id/guideline_expand_right"
+            app:layout_constraintTop_toTopOf="@+id/home_card_item_edit"
+            app:srcCompat="@drawable/baseline_remove_black_18dp" />
+
+        <android.support.constraint.Guideline
+            android:id="@+id/guideline_expand_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.125" />
+        <android.support.constraint.Guideline
+            android:id="@+id/guideline_expand_leftmid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.375" />
+        <android.support.constraint.Guideline
+            android:id="@+id/guideline_expand_rightmid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.625" />
+        <android.support.constraint.Guideline
+            android:id="@+id/guideline_expand_right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.875" />
+
+        <ImageView
+            android:id="@+id/home_card_item_expand"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="2dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/baseline_keyboard_arrow_down_black_18dp" />
 
     </android.support.constraint.ConstraintLayout>
 

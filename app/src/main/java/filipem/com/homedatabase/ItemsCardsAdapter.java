@@ -3,11 +3,13 @@ package filipem.com.homedatabase;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.transition.TransitionManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.OvershootInterpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -23,6 +25,10 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import net.cachapa.expandablelayout.ExpandableLayout;
+
+import org.w3c.dom.Text;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -32,6 +38,7 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
     List<Item> items;
     Home mainActivity;
     private int mExpandedPosition = -1;
+    private int prev_expanded = -1;
     private StorageReference storageRef;
 
     ListPreloader.PreloadSizeProvider sizeProvider = new ViewPreloadSizeProvider();
@@ -50,6 +57,13 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
 
     @Override
     public void onBindViewHolder(final CardViewHolder postsCardView, int i) {
+        /*Collapse cardview by default*/
+        postsCardView.itemView.setActivated(false);
+        postsCardView.edit.setVisibility(View.GONE);
+        postsCardView.add.setVisibility(View.GONE);
+        postsCardView.done.setVisibility(View.GONE);
+        postsCardView.remove.setVisibility(View.GONE);
+        /*----code end-----*/
         postsCardView.itemName.setText(items.get(i).getItem_name());
         postsCardView.itemBarcode.setText(items.get(i).getItemBarcode());
         postsCardView.itemCategory.setText(items.get(i).getCategory());
@@ -65,25 +79,41 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
                         .placeholder(R.drawable.circular_progress_bar)
                         .error(R.drawable.round_face_24))
                 .into(postsCardView.itemPhoto);
-        /*storageRef.child(items.get(i).getItem_name()+".jpeg").getDownloadUrl()
-                .addOnSuccessListener(new OnSuccessListener<Uri>() {
-            @Override
-            public void onSuccess(Uri uri) {
-                Log.i(TAG, "Got image url for item \"" + items
-                        .get(postsCardView.getAdapterPosition()).getItem_name()
-                         + "\" => " + uri.toString());
 
-                //Load with Glide
-
-            }
-        }).addOnFailureListener(new OnFailureListener() {
+        postsCardView.expand.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.e(TAG, "No image url found for item \"" + items
-                        .get(postsCardView.getAdapterPosition()).getItem_name()+"\" with ref " +
-                        "=> " + storageRef.child(items.get(postsCardView.getAdapterPosition()).getItem_name()+".jpeg").toString());
+            public void onClick(View view) {
+                final boolean visibility = postsCardView.edit.getVisibility()==View.VISIBLE;
+
+                if (!visibility)
+                {
+                    postsCardView.itemView.setActivated(true);
+                    postsCardView.edit.setVisibility(View.VISIBLE);
+                    postsCardView.add.setVisibility(View.VISIBLE);
+                    postsCardView.done.setVisibility(View.VISIBLE);
+                    postsCardView.remove.setVisibility(View.VISIBLE);
+                    if (prev_expanded!=-1 && prev_expanded!=postsCardView.getAdapterPosition())
+                    {
+                        mainActivity.recyclerViewItems.findViewHolderForLayoutPosition(prev_expanded).itemView.setActivated(false);
+                        mainActivity.recyclerViewItems.findViewHolderForLayoutPosition(prev_expanded).itemView.findViewById(R.id.home_card_item_edit).setVisibility(View.GONE);
+                        mainActivity.recyclerViewItems.findViewHolderForLayoutPosition(prev_expanded).itemView.findViewById(R.id.home_card_item_done).setVisibility(View.GONE);
+                        mainActivity.recyclerViewItems.findViewHolderForLayoutPosition(prev_expanded).itemView.findViewById(R.id.home_card_item_add).setVisibility(View.GONE);
+                        mainActivity.recyclerViewItems.findViewHolderForLayoutPosition(prev_expanded).itemView.findViewById(R.id.home_card_item_remove).setVisibility(View.GONE);
+                    }
+                    prev_expanded = postsCardView.getAdapterPosition();
+                }
+                else
+                {
+                    postsCardView.itemView.setActivated(false);
+                    postsCardView.edit.setVisibility(View.GONE);
+                    postsCardView.add.setVisibility(View.GONE);
+                    postsCardView.done.setVisibility(View.GONE);
+                    postsCardView.remove.setVisibility(View.GONE);
+                }
+                TransitionManager.beginDelayedTransition(mainActivity.recyclerViewItems);
             }
-        });*/
+        });
+
         postsCardView.itemView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
@@ -105,7 +135,7 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
         return pvh;
     }
 
-    public static class CardViewHolder extends RecyclerView.ViewHolder {
+    public class CardViewHolder extends RecyclerView.ViewHolder {
 
         TextView itemName;
         TextView itemBarcode;
@@ -113,6 +143,11 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
         TextView itemSubCategory;
         TextView itemQuantity;
         ImageView itemPhoto;
+        ImageView edit;
+        ImageView done;
+        ImageView add;
+        ImageView remove;
+        ImageView expand;
 
         CardViewHolder(View itemView) {
             super(itemView);
@@ -122,6 +157,11 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
             itemCategory = itemView.findViewById(R.id.home_card_item_category);
             itemSubCategory = itemView.findViewById(R.id.home_card_item_subcategory);
             itemQuantity = itemView.findViewById(R.id.home_card_item_quantity);
+            edit = itemView.findViewById(R.id.home_card_item_edit);
+            done = itemView.findViewById(R.id.home_card_item_done);
+            add = itemView.findViewById(R.id.home_card_item_add);
+            remove = itemView.findViewById(R.id.home_card_item_remove);
+            expand = itemView.findViewById(R.id.home_card_item_expand);
         }
     }
 }
