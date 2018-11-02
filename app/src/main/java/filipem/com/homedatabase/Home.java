@@ -50,10 +50,6 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
-import net.cachapa.expandablelayout.ExpandableLayout;
-
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -94,7 +90,9 @@ public class Home extends AppCompatActivity
     private List<Item> itemList = new ArrayList<>();
     private List<Item> currentlyEditing = new ArrayList<>();
     List<String> categories;
-    ArrayAdapter<String> dataAdapter;
+    List<String> subcategories;
+    ArrayAdapter<String> dataAdapterMain;
+    ArrayAdapter<String> dataAdapterSub;
     Map<String, Object> data;
 
     private boolean itemCollectionExists = false;
@@ -139,7 +137,7 @@ public class Home extends AppCompatActivity
                 userPhoto.setImageURI(null);
                 userPhoto.setImageURI(user.getPhotoUrl());
             }
-        }, 150);
+        }, 300);
 
 
         /*-----If no items exist, this text view appears----*/
@@ -289,8 +287,24 @@ public class Home extends AppCompatActivity
                         }
                     });
 
+                    /*Get sub category spinner*/
+                    final Spinner subCategorySpinner = mView.findViewById(R.id.add_item_dialog_spinner_subcategory);
+                    subCategorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> adapterView) {
+
+                        }
+                    });
+
                     categories = new ArrayList<>();
-                    dataAdapter = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, categories);
+                    subcategories = new ArrayList<>();
+                    dataAdapterMain = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, categories);
+                    dataAdapterSub = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, subcategories);
 
                     /*Get categories from server*/
                     db.collection("categories").get()
@@ -315,14 +329,45 @@ public class Home extends AppCompatActivity
                                             }
                                         }
 
-                                        dataAdapter.notifyDataSetChanged();
+                                        dataAdapterMain.notifyDataSetChanged();
                                     }
                                 }
                             });
 
-                    dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    categorySpinner.setAdapter(dataAdapter);
+                    /*Get subcategories from server*/
+                    db.collection("subcategories").get()
+                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                @Override
+                                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                    if (queryDocumentSnapshots.isEmpty()){
+                                        Log.e(TAG, "No subcategories found in database");
+                                        Toast.makeText(thisHome, R.string.no_categories_db, Toast.LENGTH_LONG).show();
+                                    }
+                                    else{
+                                        for(DocumentSnapshot documents: queryDocumentSnapshots.getDocuments()){
+                                            if (documents.getId().matches("testsubcategory")) continue;
+                                            Object tryCategoryLanguage = documents.get("name_"+language);
+                                            if (tryCategoryLanguage != null){
+                                                Log.d(TAG, "Found localized subcategory (" + language + "_" + tryCategoryLanguage + ")");
+                                                subcategories.add((String)tryCategoryLanguage);
+                                            }
+                                            else{
+                                                Log.d(TAG, "Did not found localized subcategory (" + language + "_" + tryCategoryLanguage + ")");
+                                                subcategories.add(documents.getId());
+                                            }
+                                        }
+
+                                        dataAdapterSub.notifyDataSetChanged();
+                                    }
+                                }
+                            });
+
+                    dataAdapterMain.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    dataAdapterSub.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    categorySpinner.setAdapter(dataAdapterMain);
                     categorySpinner.setSelection(0);
+                    subCategorySpinner.setAdapter(dataAdapterSub);
+                    subCategorySpinner.setSelection(0);
 
                     itemName = mView.findViewById(R.id.add_item_dialog_name);
                     itemQuantity = mView.findViewById(R.id.add_item_dialog_quantity);
@@ -350,7 +395,7 @@ public class Home extends AppCompatActivity
                                 Barcode barcode = new Barcode();
                                 barcode.rawValue = barcodeString;
 
-                                addItemDialogHandler(barcode, categorySpinner, false);
+                                addItemDialogHandler(barcode, categorySpinner, subCategorySpinner, false);
                             }
                         }
                     });
@@ -367,9 +412,9 @@ public class Home extends AppCompatActivity
                             else{
                                 Barcode barcode = new Barcode();
                                 barcode.rawValue = barcodeString;
-                                addItemDialogHandler(barcode, categorySpinner, false);
+                                addItemDialogHandler(barcode, categorySpinner, subCategorySpinner, false);
 
-                                updateItemData(categorySpinner, barcode);
+                                updateItemData(categorySpinner, subCategorySpinner, barcode);
 
                                 if (((String)thisHome.data.get("item_name")).matches("")){
                                     addItemConfirm.dismiss();
@@ -643,8 +688,24 @@ public class Home extends AppCompatActivity
                         }
                     });
 
+                    /*Get sub categpry spinner*/
+                    final Spinner subCategorySpinner = mView.findViewById(R.id.add_item_dialog_spinner_subcategory);
+                    subCategorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> adapterView) {
+
+                        }
+                    });
+
                     categories = new ArrayList<>();
-                    dataAdapter = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, categories);
+                    subcategories = new ArrayList<>();
+                    dataAdapterMain = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, categories);
+                    dataAdapterSub = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, subcategories);
 
                     /*Get categories from server*/
                     db.collection("categories").get()
@@ -669,14 +730,45 @@ public class Home extends AppCompatActivity
                                             }
                                         }
 
-                                        dataAdapter.notifyDataSetChanged();
+                                        dataAdapterMain.notifyDataSetChanged();
                                     }
                                 }
                             });
 
-                    dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    categorySpinner.setAdapter(dataAdapter);
+                    /*Get subcategories from server*/
+                    db.collection("subcategories").get()
+                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                @Override
+                                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                    if (queryDocumentSnapshots.isEmpty()){
+                                        Log.e(TAG, "No subcategories found in database");
+                                        Toast.makeText(thisHome, R.string.no_categories_db, Toast.LENGTH_LONG).show();
+                                    }
+                                    else{
+                                        for(DocumentSnapshot documents: queryDocumentSnapshots.getDocuments()){
+                                            if (documents.getId().matches("testsubcategory")) continue;
+                                            Object tryCategoryLanguage = documents.get("name_"+language);
+                                            if (tryCategoryLanguage != null){
+                                                Log.d(TAG, "Found localized subcategory (" + language + "_" + tryCategoryLanguage + ")");
+                                                subcategories.add((String)tryCategoryLanguage);
+                                            }
+                                            else{
+                                                Log.d(TAG, "Did not found localized subcategory (" + language + "_" + tryCategoryLanguage + ")");
+                                                subcategories.add(documents.getId());
+                                            }
+                                        }
+
+                                        dataAdapterSub.notifyDataSetChanged();
+                                    }
+                                }
+                            });
+
+                    dataAdapterMain.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    dataAdapterSub.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    categorySpinner.setAdapter(dataAdapterMain);
                     categorySpinner.setSelection(0);
+                    subCategorySpinner.setAdapter(dataAdapterSub);
+                    subCategorySpinner.setSelection(0);
 
                     itemName = mView.findViewById(R.id.add_item_dialog_name);
                     itemQuantity = mView.findViewById(R.id.add_item_dialog_quantity);
@@ -685,7 +777,7 @@ public class Home extends AppCompatActivity
                     cancelButton = mView.findViewById(R.id.add_item_dialog_cancel);
 
                     Log.d(TAG, "Entering addItemDialogHandler");
-                    addItemDialogHandler(barcode, categorySpinner, false);
+                    addItemDialogHandler(barcode, categorySpinner, subCategorySpinner, false);
 
                     cancelButton.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -698,7 +790,7 @@ public class Home extends AppCompatActivity
                         @Override
                         public void onClick(View view) {
 
-                            updateItemData(categorySpinner, barcode);
+                            updateItemData(categorySpinner, subCategorySpinner, barcode);
 
                             if (((String)thisHome.data.get("item_name")).matches("")){
                                 addItemConfirm.dismiss();
@@ -756,7 +848,7 @@ public class Home extends AppCompatActivity
         }
     }
 
-    private void addItemDialogHandler(final Barcode barcode, final Spinner categorySpinner, final boolean byHand) {
+    private void addItemDialogHandler(final Barcode barcode, final Spinner categorySpinner, final Spinner subCategorySpinner, final boolean byHand) {
         /*---------NEW CODE-------------*/
         if (isNetworkConnected()){
             db.collection("users").document(user.getUid())
@@ -782,7 +874,7 @@ public class Home extends AppCompatActivity
 
                                         Log.d(TAG, "Entering updateEditTextFields");
                                         if (!byHand){
-                                            updateEditTextFields(documentSnapshot, categorySpinner);
+                                            updateEditTextFields(documentSnapshot, categorySpinner, subCategorySpinner);
                                         }
 
                                         //updateItemData(categorySpinner, barcode);
@@ -841,15 +933,17 @@ public class Home extends AppCompatActivity
         });
     }
 
-    private void updateEditTextFields(DocumentSnapshot documentSnapshot, Spinner categorySpinner) {
+    private void updateEditTextFields(DocumentSnapshot documentSnapshot, Spinner categorySpinner, Spinner subCategorySpinner) {
         itemBarcode.setText(documentSnapshot.getId());
         itemName.setText((String)documentSnapshot.get("item_name"));
         itemQuantity.setText(String.valueOf(documentSnapshot.get("item_quantity")));
-        int spinnerPos = dataAdapter.getPosition((String)documentSnapshot.get("item_category"));
-        categorySpinner.setSelection(spinnerPos);
+        int spinnerPosMain = dataAdapterMain.getPosition((String)documentSnapshot.get("item_category"));
+        int spinnerPosSub = dataAdapterSub.getPosition((String)documentSnapshot.get("item_subcategory"));
+        categorySpinner.setSelection(spinnerPosMain);
+        subCategorySpinner.setSelection(spinnerPosSub);
     }
 
-    private void updateItemData(Spinner categorySpinner, Barcode barcode) {
+    private void updateItemData(Spinner categorySpinner, Spinner subCategorySpinner, Barcode barcode) {
         data = new HashMap<>();
 
         data.put("item_quantity", "");
@@ -876,7 +970,9 @@ public class Home extends AppCompatActivity
         Log.d(TAG, "Select item is: " + text);
         data.put("item_category", text);
 
-        data.put("item_subcategory", "Outros");
+        text = (String)subCategorySpinner.getSelectedItem();
+        Log.d(TAG, "Select item is: " + text);
+        data.put("item_subcategory", text);
 
         if (nextItemIsNew){
             data.put("timestamp", System.currentTimeMillis() / 1000L );

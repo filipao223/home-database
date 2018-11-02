@@ -71,13 +71,14 @@
             android:id="@+id/home_card_item_quantity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="24dp"
+            android:layout_marginEnd="8dp"
             android:layout_marginTop="8dp"
             android:text="@string/card_default_quantity"
             android:textSize="20sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@+id/guideline"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/guideline_expand_right"
+            app:layout_constraintStart_toStartOf="@+id/guideline_expand_right"
             app:layout_constraintTop_toTopOf="@+id/guideline" />
 
         <TextView
@@ -111,6 +112,13 @@
             android:orientation="vertical"
             app:layout_constraintGuide_percent="0.45" />
 
+        <android.support.constraint.Guideline
+            android:id="@+id/guideline4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.75"/>
+
         <ImageView
             android:id="@+id/home_card_item_edit"
             android:layout_width="wrap_content"
@@ -118,6 +126,7 @@
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginTop="16dp"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/guideline_expand_left"
             app:layout_constraintStart_toStartOf="@+id/guideline_expand_left"
@@ -131,6 +140,7 @@
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/guideline_expand_leftmid"
             app:layout_constraintStart_toStartOf="@+id/guideline_expand_leftmid"
@@ -143,6 +153,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
+            android:visibility="gone"
             app:layout_constraintEnd_toStartOf="@+id/guideline_expand_rightmid"
             app:layout_constraintStart_toStartOf="@+id/guideline_expand_rightmid"
             app:layout_constraintTop_toTopOf="@+id/home_card_item_edit"
@@ -154,6 +165,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
+            android:visibility="gone"
             app:layout_constraintEnd_toStartOf="@+id/guideline_expand_right"
             app:layout_constraintStart_toStartOf="@+id/guideline_expand_right"
             app:layout_constraintTop_toTopOf="@+id/home_card_item_edit"

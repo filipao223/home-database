@@ -1,33 +1,19 @@
 package filipem.com.homedatabase;
 
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.support.annotation.NonNull;
 import android.support.transition.TransitionManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.OvershootInterpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.ListPreloader;
-import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.util.ViewPreloadSizeProvider;
-import com.firebase.ui.storage.images.FirebaseImageLoader;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-
-import net.cachapa.expandablelayout.ExpandableLayout;
-
-import org.w3c.dom.Text;
 
 import java.io.Serializable;
 import java.util.List;
@@ -37,11 +23,8 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
     private static final String TAG = "MyActivity";
     List<Item> items;
     Home mainActivity;
-    private int mExpandedPosition = -1;
     private int prev_expanded = -1;
     private StorageReference storageRef;
-
-    ListPreloader.PreloadSizeProvider sizeProvider = new ViewPreloadSizeProvider();
 
 
     ItemsCardsAdapter(List<Item> items, Home mainActivity, StorageReference storageRef){

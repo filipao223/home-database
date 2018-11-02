@@ -10,6 +10,7 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -42,8 +43,8 @@ dependencies {
     // FirebaseUI Storage only
     implementation 'com.firebaseui:firebase-ui-storage:4.1.0'
     implementation 'me.zhanghai.android.materialprogressbar:library:1.4.2'
-    //Card view expansion
-    implementation 'net.cachapa.expandablelayout:expandablelayout:2.9.2'
+    //Multi dex
+    implementation 'com.android.support:multidex:1.0.3'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
 
     testImplementation 'junit:junit:4.12'
