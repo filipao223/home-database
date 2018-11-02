@@ -1,5 +1,6 @@
 package filipem.com.homedatabase;
 
+import android.content.res.Resources;
 import android.support.transition.TransitionManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -40,6 +41,20 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
 
     @Override
     public void onBindViewHolder(final CardViewHolder postsCardView, int i) {
+        if (i + 1 == getItemCount()) {
+            // set bottom margin to 72dp.
+            ViewGroup.MarginLayoutParams layoutParams =
+                    (ViewGroup.MarginLayoutParams) postsCardView.itemView.getLayoutParams();
+            layoutParams.setMargins(0, 0, 0, 400);
+            postsCardView.itemView.requestLayout();
+        } else {
+            // reset bottom margin back to zero. (your value may be different)
+            ViewGroup.MarginLayoutParams layoutParams =
+                    (ViewGroup.MarginLayoutParams) postsCardView.itemView.getLayoutParams();
+            layoutParams.setMargins(0, 0, 0, 0);
+            postsCardView.itemView.requestLayout();
+        }
+
         /*Collapse cardview by default*/
         postsCardView.itemView.setActivated(false);
         postsCardView.edit.setVisibility(View.GONE);

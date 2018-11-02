@@ -34,6 +34,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -212,6 +213,17 @@ public class Home extends AppCompatActivity
         }
 
         recyclerViewItems = findViewById(R.id.recyclerViewItems);
+        recyclerViewItems.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if (dy > 0 && menuButtons.getVisibility() == View.VISIBLE) {
+                    menuButtons.setVisibility(View.GONE);
+                } else if (dy < 0 && menuButtons.getVisibility() != View.VISIBLE) {
+                    menuButtons.setVisibility(View.VISIBLE);
+                }
+            }
+        });
         if ( recyclerViewItems != null){
             recyclerViewItems.setHasFixedSize(true); //RecyclerView terá sempre o mesmo tamanho, performance improvement
 
