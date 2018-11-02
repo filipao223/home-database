@@ -2,6 +2,7 @@ package filipem.com.homedatabase;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -34,7 +35,6 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -416,7 +416,7 @@ public class Home extends AppCompatActivity
                         @Override
                         public void onClick(View view) {
                             //Get barcode from text box
-                            String barcodeString = itemBarcode.getText().toString();
+                            final String barcodeString = itemBarcode.getText().toString();
 
                             if (barcodeString.matches("") || barcodeString.matches("[^0-9]")){
                                 Toast.makeText(thisHome, R.string.invalid_barcode, Toast.LENGTH_LONG).show();
@@ -451,6 +451,16 @@ public class Home extends AppCompatActivity
                                                 @Override
                                                 public void onComplete(@NonNull Task<Void> task) {
                                                     Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
+                                                    Item item = new Item("", (String)thisHome.data.get("item_name"), (int)thisHome.data.get("item_quantity")
+                                                            ,barcodeString, (String)thisHome.data.get("item_category"), (String)thisHome.data.get("item_subcategory"));
+                                                    if (cardsAdapter.items.isEmpty()){
+                                                        cardsAdapter.items.add(item);
+                                                        cardsAdapter.notifyItemInserted(cardsAdapter.items.size()-1);
+                                                    }
+                                                    else{
+                                                        cardsAdapter.items.add(0, item);
+                                                        cardsAdapter.notifyItemInserted(0);
+                                                    }
                                                 }
                                             });
                                 }
@@ -827,6 +837,16 @@ public class Home extends AppCompatActivity
                                             @Override
                                             public void onComplete(@NonNull Task<Void> task) {
                                                 Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
+                                                Item item = new Item("", (String)thisHome.data.get("item_name"), (int)thisHome.data.get("item_quantity")
+                                                        ,barcode.rawValue, (String)thisHome.data.get("item_category"), (String)thisHome.data.get("item_subcategory"));
+                                                if (cardsAdapter.items.isEmpty()){
+                                                    cardsAdapter.items.add(item);
+                                                    cardsAdapter.notifyItemInserted(cardsAdapter.items.size()-1);
+                                                }
+                                                else{
+                                                    cardsAdapter.items.add(0, item);
+                                                    cardsAdapter.notifyItemInserted(0);
+                                                }
                                             }
                                         });
                             }
@@ -992,10 +1012,48 @@ public class Home extends AppCompatActivity
         data.put("updated", System.currentTimeMillis() / 1000L );
     }
 
-    protected void itemLongClick(View view){
-        //Get card data
-        String barcode = ((TextView)view.findViewById(R.id.home_card_item_barcode)).getText().toString();
-        Toast.makeText(context, "Long pressed item with barcode => " + barcode, Toast.LENGTH_SHORT).show();
+    protected void itemLongClick(View view, final ItemsCardsAdapter.CardViewHolder holder){
+        //Create alert dialog
+        AlertDialog.Builder builder;
+        builder = new AlertDialog.Builder(context);
+        builder.setTitle(holder.itemName.getText().toString())
+                .setMessage(R.string.item_delete_confirmation)
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // continue with delete
+                        if (isNetworkConnected()){
+                            db.collection("users").document(user.getUid())
+                                    .collection("items").document(cardsAdapter.items.get(holder.getAdapterPosition()).getItemBarcode())
+                                    .delete()
+                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                        @Override
+                                        public void onSuccess(Void aVoid) {
+                                            Log.d(TAG, "Item deleted");
+                                            Toast.makeText(context, "Item deleted", Toast.LENGTH_SHORT).show();
+                                            cardsAdapter.items.remove(holder.getAdapterPosition());
+                                            cardsAdapter.notifyItemRemoved(holder.getAdapterPosition());
+                                            cardsAdapter.notifyItemRangeChanged(holder.getAdapterPosition(), cardsAdapter.items.size());
+                                        }
+                                    })
+                                    .addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            Log.e(TAG, "Failed item deletion");
+                                        }
+                                    });
+                        }
+                        else{
+                            Log.e(TAG, "Tried to delete without network");
+                            Toast.makeText(context, R.string.no_network, Toast.LENGTH_LONG).show();
+                        }
+                    }
+                })
+                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // do nothing
+                    }
+                })
+                .show();
     }
 
     protected void itemClick(View view, final ItemsCardsAdapter.CardViewHolder holder){

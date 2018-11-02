@@ -143,7 +143,7 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
         postsCardView.itemView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                mainActivity.itemLongClick(postsCardView.itemView);
+                mainActivity.itemLongClick(view, postsCardView);
                 return true;
             }
         });

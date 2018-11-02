@@ -39,4 +39,5 @@
     <string name="barcode_hint">Barcode</string>
     <string name="add_dialog_check_item">Check item</string>
     <string name="item_update">Updated item</string>
+    <string name="item_delete_confirmation">De certeza que pretende apagar item?</string>
 </resources>
