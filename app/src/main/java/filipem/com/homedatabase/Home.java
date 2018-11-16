@@ -62,7 +62,7 @@ public class Home extends AppCompatActivity
 
     private static final String TAG = "My home";
     private Context context;
-
+    //Testing gpg key
     private static int RC_BARCODE_SCAN = 1;
 
     private com.getbase.floatingactionbutton.FloatingActionsMenu menuButtons;
