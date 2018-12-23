@@ -18,6 +18,11 @@ public class Item {
         this.item_quantity = item_quantity;
     }
 
+    @Override
+    public String toString() {
+        return item_name;
+    }
+
     /*-----Getters and setters-----*/
 
     public String getPhoto_id() {

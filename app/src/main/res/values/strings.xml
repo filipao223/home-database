@@ -40,4 +40,6 @@
     <string name="add_dialog_check_item">Check item</string>
     <string name="item_update">Updated item</string>
     <string name="item_delete_confirmation">De certeza que pretende apagar item?</string>
+    <string name="action_search">Search</string>
+    <string name="search_hint">Type name…</string>
 </resources>

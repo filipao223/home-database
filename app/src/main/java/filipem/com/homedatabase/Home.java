@@ -1,6 +1,7 @@
 package filipem.com.homedatabase;
 
 import android.Manifest;
+import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -15,6 +16,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -50,6 +52,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import filipem.com.homedatabase.Barcode.BarcodeCaptureActivity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,6 +84,8 @@ public class Home extends AppCompatActivity
 
     protected RecyclerView recyclerViewItems;
     private SwipeRefreshLayout mSwipeRefreshLayoutItems;
+
+    private SearchView searchView;
 
     private TextView noItemsText;
 
@@ -637,6 +642,31 @@ public class Home extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        searchView = (SearchView) menu.findItem(R.id.action_search)
+                .getActionView();
+        searchView.setSearchableInfo(searchManager
+                .getSearchableInfo(getComponentName()));
+        searchView.setMaxWidth(Integer.MAX_VALUE);
+
+        // listening to search query text change
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                Log.d(TAG, "Got query: " + query);
+                // filter recycler view when query submitted
+                cardsAdapter.getFilter().filter(query);
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String query) {
+                Log.d(TAG, "Got query updated: " + query);
+                // filter recycler view when text is changed
+                cardsAdapter.getFilter().filter(query);
+                return false;
+            }
+        });
         return true;
     }
 

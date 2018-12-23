@@ -1,5 +1,5 @@
 
-package filipem.com.homedatabase;
+package filipem.com.homedatabase.Barcode;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -23,7 +23,6 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -31,6 +30,7 @@ import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.vision.MultiProcessor;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
+import filipem.com.homedatabase.R;
 
 import java.io.IOException;
 

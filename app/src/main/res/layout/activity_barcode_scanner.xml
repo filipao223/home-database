@@ -8,16 +8,16 @@
     android:layout_height="match_parent"
     android:keepScreenOn="true">
 
-    <filipem.com.homedatabase.CameraSourcePreview
+    <filipem.com.homedatabase.Barcode.CameraSourcePreview
         android:id="@+id/preview"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <filipem.com.homedatabase.GraphicOverlay
+        <filipem.com.homedatabase.Barcode.GraphicOverlay
             android:id="@+id/graphicOverlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-    </filipem.com.homedatabase.CameraSourcePreview>
+    </filipem.com.homedatabase.Barcode.CameraSourcePreview>
 
 </LinearLayout>

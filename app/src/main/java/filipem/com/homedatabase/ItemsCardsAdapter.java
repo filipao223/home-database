@@ -1,28 +1,29 @@
 package filipem.com.homedatabase;
 
-import android.content.res.Resources;
 import android.support.transition.TransitionManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.ListPreloader;
 import com.bumptech.glide.request.RequestOptions;
-import com.bumptech.glide.util.ViewPreloadSizeProvider;
 import com.google.firebase.storage.StorageReference;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
-public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.CardViewHolder> implements Serializable {
+public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.CardViewHolder> implements Serializable, Filterable {
 
     private static final String TAG = "MyActivity";
     List<Item> items;
+    List<Item> itemsFiltered;
     Home mainActivity;
     private int prev_expanded = -1;
     private StorageReference storageRef;
@@ -30,6 +31,7 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
 
     ItemsCardsAdapter(List<Item> items, Home mainActivity, StorageReference storageRef){
         this.items = items;
+        this.itemsFiltered = items;
         this.mainActivity = mainActivity;
         this.storageRef = storageRef;
     }
@@ -62,17 +64,17 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
         postsCardView.done.setVisibility(View.GONE);
         postsCardView.remove.setVisibility(View.GONE);
         /*----code end-----*/
-        postsCardView.itemName.setText(items.get(i).getItem_name());
-        postsCardView.itemBarcode.setText(items.get(i).getItemBarcode());
-        postsCardView.itemCategory.setText(items.get(i).getCategory());
-        postsCardView.itemSubCategory.setText(items.get(i).getSubCategory());
-        postsCardView.itemQuantity.setText(String.valueOf(items.get(i).getItem_quantity()));
+        postsCardView.itemName.setText(itemsFiltered.get(i).getItem_name());
+        postsCardView.itemBarcode.setText(itemsFiltered.get(i).getItemBarcode());
+        postsCardView.itemCategory.setText(itemsFiltered.get(i).getCategory());
+        postsCardView.itemSubCategory.setText(itemsFiltered.get(i).getSubCategory());
+        postsCardView.itemQuantity.setText(String.valueOf(itemsFiltered.get(i).getItem_quantity()));
         //Get url of image
         // Load the image using Glide
-        Log.i(TAG, "Getting image for item \"" + items.get(postsCardView.getAdapterPosition()).getItem_name() +
-                            "\" with url => " + storageRef.child(items.get(postsCardView.getAdapterPosition()).getItem_name()).toString() + ".jpeg");
+        Log.i(TAG, "Getting image for item \"" + itemsFiltered.get(postsCardView.getAdapterPosition()).getItem_name() +
+                            "\" with url => " + storageRef.child(itemsFiltered.get(postsCardView.getAdapterPosition()).getItem_name()).toString() + ".jpeg");
         Glide.with(this.mainActivity)
-                .load(storageRef.child(items.get(postsCardView.getAdapterPosition()).getItem_name()+".jpeg"))
+                .load(storageRef.child(itemsFiltered.get(postsCardView.getAdapterPosition()).getItem_name()+".jpeg"))
                 .apply(new RequestOptions()
                         .placeholder(R.drawable.circular_progress_bar)
                         .error(R.drawable.round_face_24))
@@ -151,7 +153,7 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
 
     @Override
     public int getItemCount() {
-        return items.size();
+        return itemsFiltered.size();
     }
 
     @Override
@@ -159,6 +161,40 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
         View v = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.cardview_item, viewGroup, false);
         CardViewHolder pvh = new CardViewHolder(v);
         return pvh;
+    }
+
+    @Override
+    public Filter getFilter() {
+        return new Filter() {
+            @Override
+            protected FilterResults performFiltering(CharSequence charSequence) {
+                String charString = charSequence.toString();
+                Log.d(TAG, "Got query (Adapter): " + charString);
+                if (charString.isEmpty()) {
+                    itemsFiltered = items;
+                } else {
+                    List<Item> filteredList = new ArrayList<>();
+                    for (Item item : items) {
+
+                        if (item.getItem_name().toLowerCase().contains(charString.toLowerCase()) || item.getItemBarcode().contains(charSequence)) {
+                            filteredList.add(item);
+                        }
+                    }
+                    Log.d(TAG, "With query, found: " + filteredList.toString());
+                    itemsFiltered = filteredList;
+                }
+
+                FilterResults filterResults = new FilterResults();
+                filterResults.values = itemsFiltered;
+                return filterResults;
+            }
+
+            @Override
+            protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
+                itemsFiltered = (ArrayList<Item>) filterResults.values;
+                notifyDataSetChanged();
+            }
+        };
     }
 
     public class CardViewHolder extends RecyclerView.ViewHolder {
