@@ -182,6 +182,9 @@ public class Home extends AppCompatActivity
         menuButtons = findViewById(R.id.menu_multiple_actions);
         addByHand = findViewById(R.id.addByHand);
         addBarcode = findViewById(R.id.addBarcode);
+        
+        addByHand.setColorNormalResId(R.color.lightWhite);
+        addBarcode.setColorNormalResId(R.color.lightWhite);
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
