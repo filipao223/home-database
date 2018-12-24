@@ -41,6 +41,7 @@ dependencies {
     implementation "androidx.arch.core:core-runtime:2.0.1-alpha01"
     implementation "androidx.arch.core:core-common:2.0.0"
     implementation 'com.github.bumptech.glide:glide:4.8.0'
+    implementation 'me.dm7.barcodescanner:zxing:1.9.8'
     // FirebaseUI Storage only
     implementation 'com.firebaseui:firebase-ui-storage:4.1.0'
     implementation 'me.zhanghai.android.materialprogressbar:library:1.4.2'

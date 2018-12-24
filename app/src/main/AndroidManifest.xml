@@ -39,11 +39,7 @@
 
         </activity>
 
-        <activity
-            android:name=".Barcode.BarcodeCaptureActivity"
-            android:label="@string/title_activity_barcode_scanner">
-
-        </activity>
+        <activity android:name=".Barcode.Scanner"></activity>
     </application>
 
 </manifest>

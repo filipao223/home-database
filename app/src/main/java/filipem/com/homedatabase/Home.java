@@ -41,7 +41,6 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.vision.barcode.Barcode;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -52,7 +51,9 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import filipem.com.homedatabase.Barcode.BarcodeCaptureActivity;
+
+import filipem.com.homedatabase.Barcode.Scanner;
+import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -116,6 +117,8 @@ public class Home extends AppCompatActivity
     private NavigationView mNavigationView;
     private LinearLayout navHeader;
 
+    private ZXingScannerView scannerView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -127,6 +130,8 @@ public class Home extends AppCompatActivity
                 .setTimestampsInSnapshotsEnabled(true)
                 .build();
         db.setFirestoreSettings(settings);
+
+        scannerView = new ZXingScannerView(this);
 
         /*-----Initialize drawer image, name and email-----*/
         final Handler h1 = new Handler();
@@ -178,13 +183,13 @@ public class Home extends AppCompatActivity
         addByHand = findViewById(R.id.addByHand);
         addBarcode = findViewById(R.id.addBarcode);
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        mNavigationView = (NavigationView) findViewById(R.id.nav_view);
+        mNavigationView = findViewById(R.id.nav_view);
         mNavigationView.setNavigationItemSelectedListener(this);
 
         /*Gets camera permission*/
@@ -409,10 +414,7 @@ public class Home extends AppCompatActivity
                                 Toast.makeText(thisHome, R.string.invalid_barcode, Toast.LENGTH_LONG).show();
                             }
                             else{
-                                Barcode barcode = new Barcode();
-                                barcode.rawValue = barcodeString;
-
-                                addItemDialogHandler(barcode, categorySpinner, subCategorySpinner, false);
+                                addItemDialogHandler(barcodeString, categorySpinner, subCategorySpinner, false);
                             }
                         }
                     });
@@ -427,11 +429,9 @@ public class Home extends AppCompatActivity
                                 Toast.makeText(thisHome, R.string.invalid_barcode, Toast.LENGTH_LONG).show();
                             }
                             else{
-                                Barcode barcode = new Barcode();
-                                barcode.rawValue = barcodeString;
-                                addItemDialogHandler(barcode, categorySpinner, subCategorySpinner, false);
+                                addItemDialogHandler(barcodeString, categorySpinner, subCategorySpinner, false);
 
-                                updateItemData(categorySpinner, subCategorySpinner, barcode);
+                                updateItemData(categorySpinner, subCategorySpinner, barcodeString);
 
                                 if (((String)thisHome.data.get("item_name")).matches("")){
                                     addItemConfirm.dismiss();
@@ -447,11 +447,11 @@ public class Home extends AppCompatActivity
                                     Log.e(TAG, "Caught exception: " + e);
                                 }
 
-                                updateItemTimestamp(barcode);
+                                updateItemTimestamp(barcodeString);
 
                                 //Push data to database
                                 if (nextItemIsNew){
-                                    userDocument.collection("items").document(barcode.rawValue).set(thisHome.data)
+                                    userDocument.collection("items").document(barcodeString).set(thisHome.data)
                                             .addOnCompleteListener(new OnCompleteListener<Void>() {
                                                 @Override
                                                 public void onComplete(@NonNull Task<Void> task) {
@@ -470,7 +470,7 @@ public class Home extends AppCompatActivity
                                             });
                                 }
                                 else{
-                                    userDocument.collection("items").document(barcode.rawValue).update(thisHome.data)
+                                    userDocument.collection("items").document(barcodeString).update(thisHome.data)
                                             .addOnCompleteListener(new OnCompleteListener<Void>() {
                                                 @Override
                                                 public void onComplete(@NonNull Task<Void> task) {
@@ -607,8 +607,9 @@ public class Home extends AppCompatActivity
                         @Override
                         public void onClick(View view) {
                             Toast.makeText(context, R.string.af_error, Toast.LENGTH_LONG).show();
-                            Intent intent = new Intent(Home.this, BarcodeCaptureActivity.class);
-                            Home.this.startActivityForResult(intent, RC_BARCODE_SCAN);
+                            Intent intent = new Intent(Home.this, Scanner.class);
+                            startActivityForResult(intent, RC_BARCODE_SCAN);
+                            //Home.this.startActivityForResult(intent, RC_BARCODE_SCAN);
                         }
                     });
 
@@ -716,9 +717,9 @@ public class Home extends AppCompatActivity
             if (resultCode == RESULT_OK ){
                 /*Get barcode*/
                 Bundle barcodeData = data.getExtras();
-                final Barcode barcode = (Barcode) barcodeData.get("Barcode");
+                final String barcode = (String) barcodeData.get("Barcode");
                 if (barcode != null ){
-                    Log.i(TAG, "Got barcode: " + barcode.rawValue);
+                    Log.i(TAG, "Got barcode: " + barcode);
                     final AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
                     final View mView = getLayoutInflater().inflate(R.layout.item_add_dialog, null);
 
@@ -824,7 +825,7 @@ public class Home extends AppCompatActivity
 
                     itemName = mView.findViewById(R.id.add_item_dialog_name);
                     itemQuantity = mView.findViewById(R.id.add_item_dialog_quantity);
-                    itemBarcode = mView.findViewById(R.id.add_item_dialog_barcode); itemBarcode.setText(barcode.rawValue);
+                    itemBarcode = mView.findViewById(R.id.add_item_dialog_barcode); itemBarcode.setText(barcode);
                     confirmButton = mView.findViewById(R.id.add_item_dialog_confirm);
                     cancelButton = mView.findViewById(R.id.add_item_dialog_cancel);
 
@@ -862,13 +863,13 @@ public class Home extends AppCompatActivity
 
                             //Push data to database
                             if (nextItemIsNew){
-                                userDocument.collection("items").document(barcode.rawValue).set(thisHome.data)
+                                userDocument.collection("items").document(barcode).set(thisHome.data)
                                         .addOnCompleteListener(new OnCompleteListener<Void>() {
                                             @Override
                                             public void onComplete(@NonNull Task<Void> task) {
                                                 Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
                                                 Item item = new Item("", (String)thisHome.data.get("item_name"), (int)thisHome.data.get("item_quantity")
-                                                        ,barcode.rawValue, (String)thisHome.data.get("item_category"), (String)thisHome.data.get("item_subcategory"));
+                                                        ,barcode, (String)thisHome.data.get("item_category"), (String)thisHome.data.get("item_subcategory"));
                                                 if (cardsAdapter.items.isEmpty()){
                                                     cardsAdapter.items.add(item);
                                                     cardsAdapter.notifyItemInserted(cardsAdapter.items.size()-1);
@@ -881,7 +882,7 @@ public class Home extends AppCompatActivity
                                         });
                             }
                             else{
-                                userDocument.collection("items").document(barcode.rawValue).update(thisHome.data)
+                                userDocument.collection("items").document(barcode).update(thisHome.data)
                                         .addOnCompleteListener(new OnCompleteListener<Void>() {
                                             @Override
                                             public void onComplete(@NonNull Task<Void> task) {
@@ -910,7 +911,7 @@ public class Home extends AppCompatActivity
         }
     }
 
-    private void addItemDialogHandler(final Barcode barcode, final Spinner categorySpinner, final Spinner subCategorySpinner, final boolean byHand) {
+    private void addItemDialogHandler(final String barcode, final Spinner categorySpinner, final Spinner subCategorySpinner, final boolean byHand) {
         /*---------NEW CODE-------------*/
         if (isNetworkConnected()){
             db.collection("users").document(user.getUid())
@@ -923,7 +924,7 @@ public class Home extends AppCompatActivity
                             Log.d(TAG, "Items collection exists for user " + user.getUid());
                             db.collection("users").document(user.getUid())
                                     .collection("items")
-                                    .document(barcode.rawValue)
+                                    .document(barcode)
                                     .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                                 @Override
                                 public void onSuccess(DocumentSnapshot documentSnapshot) {
@@ -931,7 +932,7 @@ public class Home extends AppCompatActivity
                                         //---------Specific item already exists
                                         nextItemIsNew = false;
                                         Log.d(TAG, "Item with barcode => " +
-                                                barcode.rawValue + " already exists");
+                                                barcode + " already exists");
                                         Toast.makeText(thisHome, R.string.add_item_already_exists_error, Toast.LENGTH_LONG).show();
 
                                         Log.d(TAG, "Entering updateEditTextFields");
@@ -947,7 +948,7 @@ public class Home extends AppCompatActivity
                                         //---------Specific item doesnt exist yet
                                         nextItemIsNew = true;
                                         Log.d(TAG, "Item with barcode => " +
-                                                barcode.rawValue + " doesn't yet exist");
+                                                barcode + " doesn't yet exist");
                                         //updateItemData(categorySpinner, barcode);
 
                                     }
@@ -975,22 +976,22 @@ public class Home extends AppCompatActivity
         }
     }
 
-    private void updateItemTimestamp(final Barcode barcode) {
+    private void updateItemTimestamp(final String barcode) {
         db.collection("users").document(user.getUid())
                 .collection("items")
-                .document(barcode.rawValue)
+                .document(barcode)
                 .update("updated", System.currentTimeMillis() / 1000L)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
                 Log.d(TAG, "Timestamp of tem with barcode => " +
-                        barcode.rawValue + " updated");
+                        barcode + " updated");
             }
             }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
                 Log.d(TAG, "Failed to update timestamp of tem with barcode => " +
-                        barcode.rawValue);
+                        barcode);
             }
         });
     }
@@ -1005,7 +1006,7 @@ public class Home extends AppCompatActivity
         subCategorySpinner.setSelection(spinnerPosSub);
     }
 
-    private void updateItemData(Spinner categorySpinner, Spinner subCategorySpinner, Barcode barcode) {
+    private void updateItemData(Spinner categorySpinner, Spinner subCategorySpinner, String barcode) {
         data = new HashMap<>();
 
         data.put("item_quantity", "");
