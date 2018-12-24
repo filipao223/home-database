@@ -45,22 +45,21 @@ public class Login extends Activity {
             Log.d(TAG, "onAuthStateChanged:signed_out");
         }
 
-       if (isNetworkConnected()){
-           List<AuthUI.IdpConfig> providers = Arrays.asList(
+        if (isNetworkConnected()){
+            List<AuthUI.IdpConfig> providers = Arrays.asList(
                    new AuthUI.IdpConfig.EmailBuilder().build(),
                    new AuthUI.IdpConfig.GoogleBuilder().build());
 
-           startActivityForResult(
+            startActivityForResult(
                    AuthUI.getInstance()
                            .createSignInIntentBuilder()
                            .setAvailableProviders(providers)
                            .build(),
                    RC_SIGN_IN);
-       }
-       else{
+        }
+        else{
            Toast.makeText(this, R.string.no_network, Toast.LENGTH_SHORT).show();
-           finish();
-       }
+        }
 
     }
 
