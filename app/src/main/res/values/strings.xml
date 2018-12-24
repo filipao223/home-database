@@ -42,4 +42,5 @@
     <string name="item_delete_confirmation">De certeza que pretende apagar item?</string>
     <string name="action_search">Search</string>
     <string name="search_hint">Type name…</string>
+    <string name="app_scan_barcode">Scan barcode</string>
 </resources>

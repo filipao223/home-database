@@ -606,7 +606,7 @@ public class Home extends AppCompatActivity
                     addBarcode.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            Toast.makeText(context, R.string.af_error, Toast.LENGTH_LONG).show();
+                            //Toast.makeText(context, R.string.af_error, Toast.LENGTH_LONG).show();
                             Intent intent = new Intent(Home.this, Scanner.class);
                             startActivityForResult(intent, RC_BARCODE_SCAN);
                             //Home.this.startActivityForResult(intent, RC_BARCODE_SCAN);
