@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
+import android.net.TrafficStats;
 import android.os.Bundle;
 import android.os.Handler;
 import androidx.annotation.NonNull;
@@ -271,6 +272,11 @@ public class Home extends AppCompatActivity
 
                                         cardsAdapter = new ItemsCardsAdapter(itemList, thisHome, imagesRef);
                                         recyclerViewItems.setAdapter(cardsAdapter);
+                                        Double receivedMbs = (double) TrafficStats.getUidRxBytes(android.os.Process
+                                                .myUid()) / (1024 * 1024);
+                                        Double sentMbs = (double) TrafficStats.getUidTxBytes(android.os.Process
+                                                .myUid()) / (1024 * 1024);
+                                        Log.d(TAG, "Received " + receivedMbs + " Mbs and sent " + sentMbs);
                                     }
                                     else{
                                         Toast.makeText(thisHome, "Error retrieving categories from server", Toast.LENGTH_SHORT).show();
@@ -567,6 +573,12 @@ public class Home extends AppCompatActivity
                                             ,documentSnapshot.getId(), (String)documentSnapshot.get("item_category"), (String)documentSnapshot.get("item_subcategory"));
                                     itemList.add(item);
                                 }
+
+                                Double receivedMbs = (double) TrafficStats.getUidRxBytes(android.os.Process
+                                        .myUid()) / (1024 * 1024);
+                                Double sentMbs = (double) TrafficStats.getUidTxBytes(android.os.Process
+                                        .myUid()) / (1024 * 1024);
+                                Log.d(TAG, "Received " + receivedMbs + " Mbs and sent " + sentMbs);
 
                                 if (itemList.isEmpty()){
                                     noItemsText.setVisibility(View.VISIBLE);
