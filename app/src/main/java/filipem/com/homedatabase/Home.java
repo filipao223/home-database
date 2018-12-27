@@ -17,6 +17,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.widget.SearchView;
+
+import android.os.PersistableBundle;
 import android.util.Log;
 import android.view.View;
 import com.google.android.material.navigation.NavigationView;
@@ -116,6 +118,7 @@ public class Home extends AppCompatActivity
 
     private NavigationView mNavigationView;
     private LinearLayout navHeader;
+    private LinearLayoutManager llm;
 
     private ZXingScannerView scannerView;
 
@@ -182,7 +185,7 @@ public class Home extends AppCompatActivity
         menuButtons = findViewById(R.id.menu_multiple_actions);
         addByHand = findViewById(R.id.addByHand);
         addBarcode = findViewById(R.id.addBarcode);
-        
+
         addByHand.setColorNormalResId(R.color.lightWhite);
         addBarcode.setColorNormalResId(R.color.lightWhite);
 
@@ -240,10 +243,10 @@ public class Home extends AppCompatActivity
         if ( recyclerViewItems != null){
             recyclerViewItems.setHasFixedSize(true); //RecyclerView terá sempre o mesmo tamanho, performance improvement
 
-            LinearLayoutManager llm = new LinearLayoutManager(context); //Manager que gere como os cartoes aparecem na view
+            llm = new LinearLayoutManager(context); //Manager que gere como os cartoes aparecem na view
             recyclerViewItems.setLayoutManager(llm);
 
-            /*Initial refresh*/
+            /*Initial refresh if first time opening the activity*/
             if(isNetworkConnected()){
                 Toast.makeText(this, R.string.get_data_server, Toast.LENGTH_LONG).show();
                 mSwipeRefreshLayoutItems.setRefreshing(true);
@@ -282,6 +285,7 @@ public class Home extends AppCompatActivity
                 itemList.add(new Item("", "empty", 0, "919234", "Food", "Pasta"));
                 cardsAdapter = new ItemsCardsAdapter(itemList, thisHome, imagesRef);
                 recyclerViewItems.setAdapter(cardsAdapter);
+                recyclerViewItems.setVisibility(View.GONE);
                 Toast.makeText(this, R.string.no_network, Toast.LENGTH_LONG).show();
                 Log.e(TAG, "Error, no network in Home");
             }
@@ -290,7 +294,7 @@ public class Home extends AppCompatActivity
             addByHand.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-
+                    menuButtons.collapse();
                     final AlertDialog.Builder mBuilder = new AlertDialog.Builder(thisHome);
                     final View mView = getLayoutInflater().inflate(R.layout.item_add_dialog_hand, null);
 
@@ -536,6 +540,7 @@ public class Home extends AppCompatActivity
         //Check for internet connection
         if(isNetworkConnected()){
             //Clear old data
+            recyclerViewItems.setVisibility(View.VISIBLE);
             if (itemList != null){
                 itemList.clear();
                 Log.i(TAG, "Cleared itemslist data");
@@ -610,6 +615,7 @@ public class Home extends AppCompatActivity
                         @Override
                         public void onClick(View view) {
                             //Toast.makeText(context, R.string.af_error, Toast.LENGTH_LONG).show();
+                            menuButtons.collapse();
                             Intent intent = new Intent(Home.this, Scanner.class);
                             startActivityForResult(intent, RC_BARCODE_SCAN);
                             //Home.this.startActivityForResult(intent, RC_BARCODE_SCAN);

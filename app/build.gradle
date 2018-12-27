@@ -47,6 +47,7 @@ dependencies {
     //Multi dex
     implementation 'androidx.multidex:multidex:2.0.1'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
+    annotationProcessor 'androidx.annotation:annotation:1.0.1'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.1.1'

@@ -72,9 +72,9 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
         //Get url of image
         // Load the image using Glide
         Log.i(TAG, "Getting image for item \"" + itemsFiltered.get(postsCardView.getAdapterPosition()).getItem_name() +
-                            "\" with url => " + storageRef.child(itemsFiltered.get(postsCardView.getAdapterPosition()).getItem_name()).toString() + ".jpeg");
+                            "\" with url => " + storageRef.child(itemsFiltered.get(postsCardView.getAdapterPosition()).getItemBarcode()).toString() + ".jpeg");
         Glide.with(this.mainActivity)
-                .load(storageRef.child(itemsFiltered.get(postsCardView.getAdapterPosition()).getItem_name()+".jpeg"))
+                .load(storageRef.child(itemsFiltered.get(postsCardView.getAdapterPosition()).getItemBarcode()+".jpeg"))
                 .apply(new RequestOptions()
                         .placeholder(R.drawable.circular_progress_bar)
                         .error(R.drawable.round_face_24))
