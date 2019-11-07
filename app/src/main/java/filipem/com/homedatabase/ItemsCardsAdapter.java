@@ -2,6 +2,8 @@ package filipem.com.homedatabase;
 
 import androidx.transition.TransitionManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -225,6 +227,8 @@ public class ItemsCardsAdapter extends RecyclerView.Adapter<ItemsCardsAdapter.Ca
             add = itemView.findViewById(R.id.home_card_item_add);
             remove = itemView.findViewById(R.id.home_card_item_remove);
             expand = itemView.findViewById(R.id.home_card_item_expand);
+
+            itemName.setMovementMethod(new ScrollingMovementMethod());
         }
     }
 }
