@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "573691486695-mogo05h78jeh09b4hjpe6v4kev3pl66j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "filipem.com.homedatabase",
+            "certificate_hash": "2071ee9f8c44ffbf8ee22070635811bf34461d92"
+          }
+        },
+        {
           "client_id": "573691486695-id4ffe2ae3o0ul2oig9rb65p7p5bjvs4.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -33,20 +41,13 @@
         }
       ],
       "services": {
-        "analytics_service": {
-          "status": 1
-        },
         "appinvite_service": {
-          "status": 2,
           "other_platform_oauth_client": [
             {
               "client_id": "573691486695-dp2thiok3jamk3uleallll16p73svefr.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
-        },
-        "ads_service": {
-          "status": 2
         }
       }
     }

@@ -5,6 +5,7 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
@@ -59,10 +60,14 @@ import filipem.com.homedatabase.Barcode.Scanner;
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.prefs.Preferences;
 
 public class Home extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -87,17 +92,17 @@ public class Home extends AppCompatActivity
     private StorageReference imagesRef = storageRef.child("itemImages");
 
     protected RecyclerView recyclerViewItems;
-    private SwipeRefreshLayout mSwipeRefreshLayoutItems;
+    SwipeRefreshLayout mSwipeRefreshLayoutItems;
 
     private SearchView searchView;
 
-    private TextView noItemsText;
+    TextView noItemsText;
 
     private ItemsCardsAdapter cardsAdapter;
 
     private Home thisHome;
 
-    private List<Item> itemList = new ArrayList<>();
+    ArrayList<Item> itemList = new ArrayList<>();
     private List<Item> currentlyEditing = new ArrayList<>();
     List<String> categories;
     List<String> subcategories;
@@ -122,6 +127,9 @@ public class Home extends AppCompatActivity
     private LinearLayoutManager llm;
 
     private ZXingScannerView scannerView;
+
+    RVHandler rvHandler;
+    FirebaseHandler firebaseHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -204,6 +212,7 @@ public class Home extends AppCompatActivity
                 new String[]{Manifest.permission.CAMERA},
                 1);
 
+        /*Init the swipe to refresh layout elements*/
         mSwipeRefreshLayoutItems = findViewById(R.id.home_swipe_refresh);
         Log.i(TAG, "mSwipeRefreshLayoutPosts is " + (mSwipeRefreshLayoutItems ==null?"null":"not null"));
         if (mSwipeRefreshLayoutItems != null){
@@ -229,6 +238,8 @@ public class Home extends AppCompatActivity
                     android.R.color.holo_red_light);
         }
 
+
+
         recyclerViewItems = findViewById(R.id.recyclerViewItems);
         recyclerViewItems.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -251,40 +262,12 @@ public class Home extends AppCompatActivity
             if(isNetworkConnected()){
                 Toast.makeText(this, R.string.get_data_server, Toast.LENGTH_LONG).show();
                 mSwipeRefreshLayoutItems.setRefreshing(true);
-                db.collection("users").document(user.getUid())
-                        .collection("items").get()
-                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                            @Override
-                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                if(task.isSuccessful()){
-                                    if (!task.getResult().isEmpty()){
-                                        for(QueryDocumentSnapshot documentSnapshot: task.getResult()){
-                                            if (documentSnapshot != null){
-                                                if (documentSnapshot.getId().matches("testitem")) continue;
-                                                Log.v(TAG, "Got item, barcode => " + (String)documentSnapshot.getId());
-                                                Item item = new Item("", (String)documentSnapshot.get("item_name"), (long)documentSnapshot.get("item_quantity")
-                                                        ,documentSnapshot.getId(), (String)documentSnapshot.get("item_category"), (String)documentSnapshot.get("item_subcategory"));
-                                                itemList.add(item);
-                                            }
-                                        }
 
-                                        noItemsText.setVisibility(View.GONE);
-
-                                        cardsAdapter = new ItemsCardsAdapter(itemList, thisHome, imagesRef);
-                                        recyclerViewItems.setAdapter(cardsAdapter);
-                                        Double receivedMbs = (double) TrafficStats.getUidRxBytes(android.os.Process
-                                                .myUid()) / (1024 * 1024);
-                                        Double sentMbs = (double) TrafficStats.getUidTxBytes(android.os.Process
-                                                .myUid()) / (1024 * 1024);
-                                        Log.d(TAG, "Received " + receivedMbs + " Mbs and sent " + sentMbs);
-                                    }
-                                    else{
-                                        Toast.makeText(thisHome, "Error retrieving categories from server", Toast.LENGTH_SHORT).show();
-                                    }
-                                    mSwipeRefreshLayoutItems.setRefreshing(false);
-                                }
-                            }
-                        });
+                /*Initialize handlers for getting the data from firestore and for displaying it in a recycler view*/
+                rvHandler = new RVHandler(recyclerViewItems, thisHome, imagesRef);
+                firebaseHandler = new FirebaseHandler(db, user, thisHome, rvHandler);
+                /*Get the items from the firestore*/
+                firebaseHandler.getItems();
             }
             else{
                 //Placeholder item, without adapter, swipe to refresh doesnt work
@@ -342,60 +325,10 @@ public class Home extends AppCompatActivity
                     dataAdapterSub = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, subcategories);
 
                     /*Get categories from server*/
-                    db.collection("categories").get()
-                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                                @Override
-                                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                                    if (queryDocumentSnapshots.isEmpty()){
-                                        Log.e(TAG, "No categories found in database");
-                                        Toast.makeText(thisHome, R.string.no_categories_db, Toast.LENGTH_LONG).show();
-                                    }
-                                    else{
-                                        for(DocumentSnapshot documents: queryDocumentSnapshots.getDocuments()){
-                                            if (documents.getId().matches("testcategory")) continue;
-                                            Object tryCategoryLanguage = documents.get("name_"+language);
-                                            if (tryCategoryLanguage != null){
-                                                Log.d(TAG, "Found localized category (" + language + "_" + tryCategoryLanguage + ")");
-                                                categories.add((String)tryCategoryLanguage);
-                                            }
-                                            else{
-                                                Log.d(TAG, "Did not found localized category (" + language + "_" + tryCategoryLanguage + ")");
-                                                categories.add(documents.getId());
-                                            }
-                                        }
-
-                                        dataAdapterMain.notifyDataSetChanged();
-                                    }
-                                }
-                            });
+                    firebaseHandler.getCategories(language);
 
                     /*Get subcategories from server*/
-                    db.collection("subcategories").get()
-                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                                @Override
-                                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                                    if (queryDocumentSnapshots.isEmpty()){
-                                        Log.e(TAG, "No subcategories found in database");
-                                        Toast.makeText(thisHome, R.string.no_categories_db, Toast.LENGTH_LONG).show();
-                                    }
-                                    else{
-                                        for(DocumentSnapshot documents: queryDocumentSnapshots.getDocuments()){
-                                            if (documents.getId().matches("testsubcategory")) continue;
-                                            Object tryCategoryLanguage = documents.get("name_"+language);
-                                            if (tryCategoryLanguage != null){
-                                                Log.d(TAG, "Found localized subcategory (" + language + "_" + tryCategoryLanguage + ")");
-                                                subcategories.add((String)tryCategoryLanguage);
-                                            }
-                                            else{
-                                                Log.d(TAG, "Did not found localized subcategory (" + language + "_" + tryCategoryLanguage + ")");
-                                                subcategories.add(documents.getId());
-                                            }
-                                        }
-
-                                        dataAdapterSub.notifyDataSetChanged();
-                                    }
-                                }
-                            });
+                    firebaseHandler.getSubCategories(language);
 
                     dataAdapterMain.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                     dataAdapterSub.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -510,6 +443,27 @@ public class Home extends AppCompatActivity
         }
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        //Save refresh status to boolean
+        SharedPreferences saved = getPreferences(0);
+        SharedPreferences.Editor editor = saved.edit();
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        //Check if there are saved values in shared preferences
+        SharedPreferences saved = getPreferences(0);
+        if (saved.contains("items")){
+
+        }
+    }
+
     private void checkIfUserExists() {
         if (isNetworkConnected()){
             userDocument = db.collection("users").document(user.getUid());
@@ -555,55 +509,9 @@ public class Home extends AppCompatActivity
 
             //Fill with new data
             Log.i(TAG, "Filling with new data");
-
-
-
             Log.d(TAG, "itemCollectionExists");
 
-            db.collection("users").document(user.getUid())
-                    .collection("items").get()
-                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                        @Override
-                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                            if(task.isSuccessful()){
-                                for(QueryDocumentSnapshot documentSnapshot: task.getResult()){
-                                    if (documentSnapshot.getId().matches("testitem")) continue;
-                                    Log.v(TAG, "Got item, barcode => " + (String)documentSnapshot.getId());
-                                    Item item = new Item("", (String)documentSnapshot.get("item_name"), (long)documentSnapshot.get("item_quantity")
-                                            ,documentSnapshot.getId(), (String)documentSnapshot.get("item_category"), (String)documentSnapshot.get("item_subcategory"));
-                                    itemList.add(item);
-                                }
-
-                                Double receivedMbs = (double) TrafficStats.getUidRxBytes(android.os.Process
-                                        .myUid()) / (1024 * 1024);
-                                Double sentMbs = (double) TrafficStats.getUidTxBytes(android.os.Process
-                                        .myUid()) / (1024 * 1024);
-                                Log.d(TAG, "Received " + receivedMbs + " Mbs and sent " + sentMbs);
-
-                                if (itemList.isEmpty()){
-                                    noItemsText.setVisibility(View.VISIBLE);
-                                }
-                                else noItemsText.setVisibility(View.INVISIBLE);
-
-
-                                Log.i(TAG, "New data added, example: " + (itemList.isEmpty()?"null":itemList.get(0).toString()));
-
-                                //Create adapterPosts if null
-                                if (cardsAdapter == null){
-                                    cardsAdapter = new ItemsCardsAdapter(itemList, thisHome, imagesRef);
-                                    Log.i(TAG, "New adapterPosts created");
-                                }
-                                else{
-                                    //Notify adapterPosts of the change
-                                    cardsAdapter = new ItemsCardsAdapter(itemList, thisHome, imagesRef);
-                                    //adapterPosts.notifyDataSetChanged(); <-- Não consigo por a funcionar com este metodo
-                                    recyclerViewItems.setAdapter(cardsAdapter);
-                                }
-
-                                mSwipeRefreshLayoutItems.setRefreshing(false);
-                            }
-                        }
-                    });
+            firebaseHandler.getItems();
         }
         else{
             Toast.makeText(this, R.string.no_network, Toast.LENGTH_LONG).show();
@@ -644,9 +552,6 @@ public class Home extends AppCompatActivity
                 }
                 return;
             }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
         }
     }
 
@@ -782,60 +687,10 @@ public class Home extends AppCompatActivity
                     dataAdapterSub = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, subcategories);
 
                     /*Get categories from server*/
-                    db.collection("categories").get()
-                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                                @Override
-                                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                                    if (queryDocumentSnapshots.isEmpty()){
-                                        Log.e(TAG, "No categories found in database");
-                                        Toast.makeText(thisHome, R.string.no_categories_db, Toast.LENGTH_LONG).show();
-                                    }
-                                    else{
-                                        for(DocumentSnapshot documents: queryDocumentSnapshots.getDocuments()){
-                                            if (documents.getId().matches("testcategory")) continue;
-                                            Object tryCategoryLanguage = documents.get("name_"+language);
-                                            if (tryCategoryLanguage != null){
-                                                Log.d(TAG, "Found localized category (" + language + "_" + tryCategoryLanguage + ")");
-                                                categories.add((String)tryCategoryLanguage);
-                                            }
-                                            else{
-                                                Log.d(TAG, "Did not found localized category (" + language + "_" + tryCategoryLanguage + ")");
-                                                categories.add(documents.getId());
-                                            }
-                                        }
-
-                                        dataAdapterMain.notifyDataSetChanged();
-                                    }
-                                }
-                            });
+                    firebaseHandler.getCategories(language);
 
                     /*Get subcategories from server*/
-                    db.collection("subcategories").get()
-                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                                @Override
-                                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                                    if (queryDocumentSnapshots.isEmpty()){
-                                        Log.e(TAG, "No subcategories found in database");
-                                        Toast.makeText(thisHome, R.string.no_categories_db, Toast.LENGTH_LONG).show();
-                                    }
-                                    else{
-                                        for(DocumentSnapshot documents: queryDocumentSnapshots.getDocuments()){
-                                            if (documents.getId().matches("testsubcategory")) continue;
-                                            Object tryCategoryLanguage = documents.get("name_"+language);
-                                            if (tryCategoryLanguage != null){
-                                                Log.d(TAG, "Found localized subcategory (" + language + "_" + tryCategoryLanguage + ")");
-                                                subcategories.add((String)tryCategoryLanguage);
-                                            }
-                                            else{
-                                                Log.d(TAG, "Did not found localized subcategory (" + language + "_" + tryCategoryLanguage + ")");
-                                                subcategories.add(documents.getId());
-                                            }
-                                        }
-
-                                        dataAdapterSub.notifyDataSetChanged();
-                                    }
-                                }
-                            });
+                    firebaseHandler.getSubCategories(language);
 
                     dataAdapterMain.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                     dataAdapterSub.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
