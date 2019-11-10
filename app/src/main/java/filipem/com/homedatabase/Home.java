@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
 import androidx.annotation.NonNull;
@@ -67,7 +66,6 @@ public class Home extends AppCompatActivity
 
     private static final String TAG = "My home";
     private Context context;
-    //Testing gpg key
     private static int RC_BARCODE_SCAN = 1;
 
     private com.getbase.floatingactionbutton.FloatingActionsMenu menuButtons;
@@ -123,6 +121,8 @@ public class Home extends AppCompatActivity
 
     RVHandler rvHandler;
     FirebaseHandler firebaseHandler;
+    UIHandler uiHandler;
+    NetworkHandler networkHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -135,6 +135,11 @@ public class Home extends AppCompatActivity
                 .setTimestampsInSnapshotsEnabled(true)
                 .build();
         db.setFirestoreSettings(settings);
+
+        context = this;
+        thisHome = this;
+
+        networkHandler = new NetworkHandler(thisHome);
 
         scannerView = new ZXingScannerView(this);
 
@@ -181,9 +186,6 @@ public class Home extends AppCompatActivity
         Log.i(TAG, "Got user, email is : " + user.getEmail());
         Log.i(TAG, "Got user, uuid is : " + user.getUid());
 
-        context = this;
-        thisHome = this;
-
         menuButtons = findViewById(R.id.menu_multiple_actions);
         addByHand = findViewById(R.id.addByHand);
         addBarcode = findViewById(R.id.addBarcode);
@@ -218,7 +220,8 @@ public class Home extends AppCompatActivity
                         Log.i(TAG, "Refreshing data");
 
                         mSwipeRefreshLayoutItems.setRefreshing(true); //Refresh icon gets toggled
-                        refreshHomeItems(mSwipeRefreshLayoutItems);
+                        //refreshHomeItems(mSwipeRefreshLayoutItems);
+                        uiHandler.refreshHomeItems();
                         //mSwipeRefreshLayoutItems.setRefreshing(false); //finished
                     }catch(NullPointerException e){
                         Log.e(TAG, "Error onRefresh: " + e);
@@ -252,13 +255,14 @@ public class Home extends AppCompatActivity
             recyclerViewItems.setLayoutManager(llm);
 
             /*Initial refresh if first time opening the activity*/
-            if(isNetworkConnected()){
+            if(networkHandler.isNetworkConnected()){
                 Toast.makeText(this, R.string.get_data_server, Toast.LENGTH_LONG).show();
                 mSwipeRefreshLayoutItems.setRefreshing(true);
 
                 /*Initialize handlers for getting the data from firestore and for displaying it in a recycler view*/
                 rvHandler = new RVHandler(recyclerViewItems, thisHome, imagesRef);
                 firebaseHandler = new FirebaseHandler(db, user, thisHome, rvHandler);
+                uiHandler = new UIHandler(firebaseHandler, rvHandler, thisHome);
                 /*Get the items from the firestore*/
                 firebaseHandler.getItems();
             }
@@ -452,7 +456,7 @@ public class Home extends AppCompatActivity
 
 
     private void checkIfUserExists() {
-        if (isNetworkConnected()){
+        if (networkHandler.isNetworkConnected()){
             userDocument = db.collection("users").document(user.getUid());
             userDocument.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                 @Override
@@ -478,36 +482,6 @@ public class Home extends AppCompatActivity
         }
         else{
             Log.e(TAG, "Error, no network in checkIfUserExists");
-        }
-    }
-
-
-
-
-
-    private void refreshHomeItems(SwipeRefreshLayout swipeLayout) {
-        Log.i(TAG, "refreshHomeItems was called");
-
-        //Check for internet connection
-        if(isNetworkConnected()){
-            //Clear old data
-            recyclerViewItems.setVisibility(View.VISIBLE);
-            if (itemList != null){
-                itemList.clear();
-                Log.i(TAG, "Cleared itemslist data");
-            }
-            else itemList = new ArrayList<>();
-
-            //Fill with new data
-            Log.i(TAG, "Filling with new data");
-            Log.d(TAG, "itemCollectionExists");
-
-            firebaseHandler.getItems();
-        }
-        else{
-            Toast.makeText(this, R.string.no_network, Toast.LENGTH_LONG).show();
-            Log.e(TAG, "No internet connection in refreshHomeItems");
-            mSwipeRefreshLayoutItems.setRefreshing(false);
         }
     }
 
@@ -600,8 +574,6 @@ public class Home extends AppCompatActivity
         });
         return true;
     }
-
-
 
 
 
@@ -813,7 +785,7 @@ public class Home extends AppCompatActivity
 
     private void addItemDialogHandler(final String barcode, final Spinner categorySpinner, final Spinner subCategorySpinner, final boolean byHand) {
         /*---------NEW CODE-------------*/
-        if (isNetworkConnected()){
+        if (networkHandler.isNetworkConnected()){
             db.collection("users").document(user.getUid())
                     .collection("items")
                     .get()
@@ -948,7 +920,7 @@ public class Home extends AppCompatActivity
                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         // continue with delete
-                        if (isNetworkConnected()){
+                        if (networkHandler.isNetworkConnected()){
                             db.collection("users").document(user.getUid())
                                     .collection("items").document(cardsAdapter.items.get(holder.getAdapterPosition()).getItemBarcode())
                                     .delete()
@@ -1031,7 +1003,7 @@ public class Home extends AppCompatActivity
                 //Check if there are changes to make in this card
                 if (holder.pendingChanges){
                     //Make the changes
-                    if (isNetworkConnected()){
+                    if (networkHandler.isNetworkConnected()){
                         Map<String, Object> data = new HashMap<>();
                         data.put("item_quantity", cardsAdapter.items.get(holder.getAdapterPosition()).getItem_quantity());
                         db.collection("users").document(user.getUid())
@@ -1053,13 +1025,5 @@ public class Home extends AppCompatActivity
                 }
                 break;
         }
-    }
-
-
-
-
-    private boolean isNetworkConnected() {
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        return cm.getActiveNetworkInfo() != null;
     }
 }
