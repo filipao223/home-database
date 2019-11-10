@@ -10,8 +10,8 @@ import com.google.firebase.storage.StorageReference
 class RVHandler (val recyclerView: RecyclerView, var mainActivity: Home, var imagesRef: StorageReference) {
 
     fun updateList(itemList: ArrayList<Item>): Unit{
-        var cardsAdapter = ItemsCardsAdapter(itemList, mainActivity, imagesRef)
-        recyclerView.adapter = cardsAdapter
+        mainActivity.cardsAdapter = ItemsCardsAdapter(itemList, mainActivity, imagesRef)
+        recyclerView.adapter = mainActivity.cardsAdapter
 
         /*If list has items, remove 'no items here' text*/
         if (!itemList.isEmpty()) mainActivity.noItemsText.visibility = View.GONE

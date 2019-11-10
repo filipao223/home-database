@@ -9,7 +9,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
-import android.net.TrafficStats;
 import android.os.Bundle;
 import android.os.Handler;
 import androidx.annotation.NonNull;
@@ -20,7 +19,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.widget.SearchView;
 
-import android.os.PersistableBundle;
 import android.util.Log;
 import android.view.View;
 import com.google.android.material.navigation.NavigationView;
@@ -51,7 +49,6 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -60,14 +57,10 @@ import filipem.com.homedatabase.Barcode.Scanner;
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.prefs.Preferences;
 
 public class Home extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -98,7 +91,7 @@ public class Home extends AppCompatActivity
 
     TextView noItemsText;
 
-    private ItemsCardsAdapter cardsAdapter;
+    ItemsCardsAdapter cardsAdapter;
 
     private Home thisHome;
 
@@ -384,8 +377,8 @@ public class Home extends AppCompatActivity
                                     return;
                                 }
                                 try{
-                                    if (((String)thisHome.data.get("item_quantity")).matches("") ||
-                                            ((String)thisHome.data.get("item_quantity")).matches("[^0-9]")){
+                                    if (thisHome.data.get("item_quantity").toString().matches("") ||
+                                            thisHome.data.get("item_quantity").toString().matches("[^0-9]")){
                                         addItemConfirm.dismiss();
                                         return;
                                     }
@@ -393,37 +386,16 @@ public class Home extends AppCompatActivity
                                     Log.e(TAG, "Caught exception: " + e);
                                 }
 
-                                updateItemTimestamp(barcodeString);
+                                firebaseHandler.updateItemTimestamp(barcodeString);
 
                                 //Push data to database
                                 if (nextItemIsNew){
-                                    userDocument.collection("items").document(barcodeString).set(thisHome.data)
-                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                                @Override
-                                                public void onComplete(@NonNull Task<Void> task) {
-                                                    Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
-                                                    Item item = new Item("", (String)thisHome.data.get("item_name"), (int)thisHome.data.get("item_quantity")
-                                                            ,barcodeString, (String)thisHome.data.get("item_category"), (String)thisHome.data.get("item_subcategory"));
-                                                    if (cardsAdapter.items.isEmpty()){
-                                                        cardsAdapter.items.add(item);
-                                                        cardsAdapter.notifyItemInserted(cardsAdapter.items.size()-1);
-                                                    }
-                                                    else{
-                                                        cardsAdapter.items.add(0, item);
-                                                        cardsAdapter.notifyItemInserted(0);
-                                                    }
-                                                }
-                                            });
+                                    firebaseHandler.pushNewItem(barcodeString, data);
                                 }
                                 else{
-                                    userDocument.collection("items").document(barcodeString).update(thisHome.data)
-                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                                @Override
-                                                public void onComplete(@NonNull Task<Void> task) {
-                                                    Toast.makeText(context, "Item added", Toast.LENGTH_LONG).show();
-                                                }
-                                            });
+                                    firebaseHandler.updateItem(barcodeString, data);
                                 }
+
                                 addItemConfirm.dismiss();
                             }
                         }
@@ -443,6 +415,11 @@ public class Home extends AppCompatActivity
         }
     }
 
+
+
+
+
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -452,6 +429,11 @@ public class Home extends AppCompatActivity
         SharedPreferences.Editor editor = saved.edit();
 
     }
+
+
+
+
+
 
     @Override
     protected void onResume() {
@@ -463,6 +445,11 @@ public class Home extends AppCompatActivity
 
         }
     }
+
+
+
+
+
 
     private void checkIfUserExists() {
         if (isNetworkConnected()){
@@ -494,6 +481,10 @@ public class Home extends AppCompatActivity
         }
     }
 
+
+
+
+
     private void refreshHomeItems(SwipeRefreshLayout swipeLayout) {
         Log.i(TAG, "refreshHomeItems was called");
 
@@ -519,6 +510,10 @@ public class Home extends AppCompatActivity
             mSwipeRefreshLayoutItems.setRefreshing(false);
         }
     }
+
+
+
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -555,6 +550,10 @@ public class Home extends AppCompatActivity
         }
     }
 
+
+
+
+
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -564,6 +563,11 @@ public class Home extends AppCompatActivity
             super.onBackPressed();
         }
     }
+
+
+
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -597,6 +601,12 @@ public class Home extends AppCompatActivity
         return true;
     }
 
+
+
+
+
+
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -611,6 +621,11 @@ public class Home extends AppCompatActivity
 
         return super.onOptionsItemSelected(item);
     }
+
+
+
+
+
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
@@ -635,6 +650,10 @@ public class Home extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+
+
+
 
     //After the barcode scan activity ends, it starts this method
     @Override
@@ -735,7 +754,7 @@ public class Home extends AppCompatActivity
                                 Log.e(TAG, "Caught exception: " + e);
                             }
 
-                            updateItemTimestamp(barcode);
+                            firebaseHandler.updateItemTimestamp(barcode);
 
                             //Push data to database
                             if (nextItemIsNew){
@@ -787,6 +806,11 @@ public class Home extends AppCompatActivity
         }
     }
 
+
+
+
+
+
     private void addItemDialogHandler(final String barcode, final Spinner categorySpinner, final Spinner subCategorySpinner, final boolean byHand) {
         /*---------NEW CODE-------------*/
         if (isNetworkConnected()){
@@ -817,6 +841,7 @@ public class Home extends AppCompatActivity
                                         }
 
                                         //updateItemData(categorySpinner, barcode);
+                                        //firebaseHandler.updateItem();
 
                                         //updateItemTimestamp(barcode);
                                     }
@@ -852,25 +877,11 @@ public class Home extends AppCompatActivity
         }
     }
 
-    private void updateItemTimestamp(final String barcode) {
-        db.collection("users").document(user.getUid())
-                .collection("items")
-                .document(barcode)
-                .update("updated", System.currentTimeMillis() / 1000L)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-            @Override
-            public void onSuccess(Void aVoid) {
-                Log.d(TAG, "Timestamp of tem with barcode => " +
-                        barcode + " updated");
-            }
-            }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.d(TAG, "Failed to update timestamp of tem with barcode => " +
-                        barcode);
-            }
-        });
-    }
+
+
+
+
+
 
     private void updateEditTextFields(DocumentSnapshot documentSnapshot, Spinner categorySpinner, Spinner subCategorySpinner) {
         itemBarcode.setText(documentSnapshot.getId());
@@ -881,6 +892,11 @@ public class Home extends AppCompatActivity
         categorySpinner.setSelection(spinnerPosMain);
         subCategorySpinner.setSelection(spinnerPosSub);
     }
+
+
+
+
+
 
     private void updateItemData(Spinner categorySpinner, Spinner subCategorySpinner, String barcode) {
         data = new HashMap<>();
@@ -918,6 +934,10 @@ public class Home extends AppCompatActivity
         }
         data.put("updated", System.currentTimeMillis() / 1000L );
     }
+
+
+
+
 
     protected void itemLongClick(View view, final ItemsCardsAdapter.CardViewHolder holder){
         //Create alert dialog
@@ -962,6 +982,11 @@ public class Home extends AppCompatActivity
                 })
                 .show();
     }
+
+
+
+
+
 
     protected void itemClick(View view, final ItemsCardsAdapter.CardViewHolder holder){
         switch (view.getId()){
@@ -1029,6 +1054,9 @@ public class Home extends AppCompatActivity
                 break;
         }
     }
+
+
+
 
     private boolean isNetworkConnected() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
