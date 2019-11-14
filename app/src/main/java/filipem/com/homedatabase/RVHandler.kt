@@ -5,7 +5,9 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.core.view.isVisible
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.getbase.floatingactionbutton.FloatingActionsMenu
 import com.google.firebase.storage.StorageReference
 
 class RVHandler (val recyclerView: RecyclerView, var mainActivity: Home, var imagesRef: StorageReference) {
@@ -44,5 +46,27 @@ class RVHandler (val recyclerView: RecyclerView, var mainActivity: Home, var ima
             Log.i(TAG, "Cleared itemslist data")
         } else
             mainActivity.itemList = java.util.ArrayList<Item>()
+    }
+
+
+
+    fun setupRecyclerView(menuButtons: FloatingActionsMenu): Unit{
+
+        /*Hide the floating action button if scrolling down*/
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (dy > 0 && menuButtons.visibility == View.VISIBLE) {
+                    menuButtons.visibility = View.GONE
+                } else if (dy < 0 && menuButtons.visibility != View.VISIBLE) {
+                    menuButtons.visibility = View.VISIBLE
+                }
+            }
+        })
+
+        recyclerView.setHasFixedSize(true) //RecyclerView terá sempre o mesmo tamanho, performance improvement
+
+        val llm = LinearLayoutManager(mainActivity) //Manager que gere como os cartoes aparecem na view
+        recyclerView.layoutManager = llm
     }
 }

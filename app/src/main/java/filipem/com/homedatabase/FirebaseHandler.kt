@@ -121,7 +121,7 @@ class FirebaseHandler (var db: FirebaseFirestore, var user: FirebaseUser, var ma
 
 
 
-    fun pushNewItem(barcode: String, data: Map<String, Object>): Unit{
+    fun pushNewItem(barcode: String, data: Map<String, Any>): Unit{
         db.collection("users").document(user.uid)
                 .collection("items")
                 .document(barcode)
@@ -147,7 +147,7 @@ class FirebaseHandler (var db: FirebaseFirestore, var user: FirebaseUser, var ma
 
 
 
-    fun updateItem(barcode: String, data: Map<String, Object>): Unit{
+    fun updateItem(barcode: String, data: Map<String, Any>): Unit{
         db.collection("users").document(user.uid)
                 .collection("items")
                 .document(barcode)

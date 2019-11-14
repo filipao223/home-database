@@ -68,22 +68,22 @@ public class Home extends AppCompatActivity
     private Context context;
     private static int RC_BARCODE_SCAN = 1;
 
-    private com.getbase.floatingactionbutton.FloatingActionsMenu menuButtons;
-    private com.getbase.floatingactionbutton.FloatingActionButton addByHand;
+    com.getbase.floatingactionbutton.FloatingActionsMenu menuButtons;
+    com.getbase.floatingactionbutton.FloatingActionButton addByHand;
     private com.getbase.floatingactionbutton.FloatingActionButton addBarcode;
 
-    private Item tempItem;
+    protected Item tempItem;
 
-    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private FirebaseUser user;
-    private DocumentReference userDocument;
-    private DocumentReference newUserDocument;
-    private FirebaseStorage storage = FirebaseStorage.getInstance();
-    private StorageReference storageRef = storage.getReference();
-    private StorageReference imagesRef = storageRef.child("itemImages");
+    protected final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    protected FirebaseUser user;
+    protected DocumentReference userDocument;
+    protected DocumentReference newUserDocument;
+    protected FirebaseStorage storage = FirebaseStorage.getInstance();
+    protected StorageReference storageRef = storage.getReference();
+    protected StorageReference imagesRef = storageRef.child("itemImages");
 
     protected RecyclerView recyclerViewItems;
-    SwipeRefreshLayout mSwipeRefreshLayoutItems;
+    protected SwipeRefreshLayout mSwipeRefreshLayoutItems;
 
     private SearchView searchView;
 
@@ -103,9 +103,9 @@ public class Home extends AppCompatActivity
 
     private boolean itemCollectionExists = false;
     private boolean itemInCollectionExists = false;
-    private boolean nextItemIsNew = false;
+    boolean nextItemIsNew = false;
 
-    private AlertDialog addItemConfirm;
+    AlertDialog addItemConfirm;
     EditText itemName;
     EditText itemQuantity;
     EditText itemBarcode;
@@ -113,9 +113,9 @@ public class Home extends AppCompatActivity
     Button cancelButton;
     Button checkButton;
 
-    private NavigationView mNavigationView;
-    private LinearLayout navHeader;
-    private LinearLayoutManager llm;
+    protected NavigationView mNavigationView;
+    protected LinearLayout navHeader;
+    protected LinearLayoutManager llm;
 
     private ZXingScannerView scannerView;
 
@@ -142,24 +142,6 @@ public class Home extends AppCompatActivity
         networkHandler = new NetworkHandler(thisHome);
 
         scannerView = new ZXingScannerView(this);
-
-        /*-----Initialize drawer image, name and email-----*/
-        final Handler h1 = new Handler();
-        h1.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                navHeader = findViewById(R.id.nav_header);
-                ImageView userPhoto = navHeader.findViewById(R.id.drawer_user_image);
-                TextView userName = navHeader.findViewById(R.id.drawer_user_name);
-                TextView userEmail = navHeader.findViewById(R.id.drawer_user_email);
-
-                userName.setText(user.getDisplayName());
-                userEmail.setText(user.getEmail());
-                userPhoto.setImageURI(null);
-                userPhoto.setImageURI(user.getPhotoUrl());
-            }
-        }, 300);
-
 
         /*-----If no items exist, this text view appears----*/
         noItemsText = findViewById(R.id.home_no_items);
@@ -237,32 +219,23 @@ public class Home extends AppCompatActivity
 
 
         recyclerViewItems = findViewById(R.id.recyclerViewItems);
-        recyclerViewItems.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-                if (dy > 0 && menuButtons.getVisibility() == View.VISIBLE) {
-                    menuButtons.setVisibility(View.GONE);
-                } else if (dy < 0 && menuButtons.getVisibility() != View.VISIBLE) {
-                    menuButtons.setVisibility(View.VISIBLE);
-                }
-            }
-        });
-        if ( recyclerViewItems != null){
-            recyclerViewItems.setHasFixedSize(true); //RecyclerView terá sempre o mesmo tamanho, performance improvement
 
-            llm = new LinearLayoutManager(context); //Manager que gere como os cartoes aparecem na view
-            recyclerViewItems.setLayoutManager(llm);
+        /*Initialize handlers for getting the data from firestore and for displaying it in a recycler view*/
+        rvHandler = new RVHandler(recyclerViewItems, thisHome, imagesRef);
+        firebaseHandler = new FirebaseHandler(db, user, thisHome, rvHandler);
+        uiHandler = new UIHandler(firebaseHandler, rvHandler, thisHome);
+
+        /*-----Initialize drawer image, name and email-----*/
+        uiHandler.initDrawer(user);
+
+        if ( recyclerViewItems != null){
+            rvHandler.setupRecyclerView(menuButtons);
 
             /*Initial refresh if first time opening the activity*/
             if(networkHandler.isNetworkConnected()){
                 Toast.makeText(this, R.string.get_data_server, Toast.LENGTH_LONG).show();
                 mSwipeRefreshLayoutItems.setRefreshing(true);
 
-                /*Initialize handlers for getting the data from firestore and for displaying it in a recycler view*/
-                rvHandler = new RVHandler(recyclerViewItems, thisHome, imagesRef);
-                firebaseHandler = new FirebaseHandler(db, user, thisHome, rvHandler);
-                uiHandler = new UIHandler(firebaseHandler, rvHandler, thisHome);
                 /*Get the items from the firestore*/
                 firebaseHandler.getItems();
             }
@@ -277,145 +250,7 @@ public class Home extends AppCompatActivity
             }
 
             //------Set add by hand---------
-            addByHand.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    menuButtons.collapse();
-                    final AlertDialog.Builder mBuilder = new AlertDialog.Builder(thisHome);
-                    final View mView = getLayoutInflater().inflate(R.layout.item_add_dialog_hand, null);
-
-                    /*Default locale*/
-                    Locale currentLocale = Locale.getDefault();
-                    final String language = currentLocale.getLanguage();
-
-                    /*Get main category spinner*/
-                    final Spinner categorySpinner = mView.findViewById(R.id.add_item_dialog_spinner_category);
-                    categorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                        @Override
-                        public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                            ((TextView) view).setTextColor(Color.BLACK);
-                        }
-
-                        @Override
-                        public void onNothingSelected(AdapterView<?> adapterView) {
-
-                        }
-                    });
-
-                    /*Get sub category spinner*/
-                    final Spinner subCategorySpinner = mView.findViewById(R.id.add_item_dialog_spinner_subcategory);
-                    subCategorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                        @Override
-                        public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-
-                        }
-
-                        @Override
-                        public void onNothingSelected(AdapterView<?> adapterView) {
-
-                        }
-                    });
-
-                    categories = new ArrayList<>();
-                    subcategories = new ArrayList<>();
-                    dataAdapterMain = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, categories);
-                    dataAdapterSub = new ArrayAdapter<String>(thisHome, android.R.layout.simple_spinner_item, subcategories);
-
-                    /*Get categories from server*/
-                    firebaseHandler.getCategories(language);
-
-                    /*Get subcategories from server*/
-                    firebaseHandler.getSubCategories(language);
-
-                    dataAdapterMain.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    dataAdapterSub.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    categorySpinner.setAdapter(dataAdapterMain);
-                    categorySpinner.setSelection(0);
-                    subCategorySpinner.setAdapter(dataAdapterSub);
-                    subCategorySpinner.setSelection(0);
-
-                    itemName = mView.findViewById(R.id.add_item_dialog_name);
-                    itemQuantity = mView.findViewById(R.id.add_item_dialog_quantity);
-                    itemBarcode = mView.findViewById(R.id.add_item_dialog_barcode);
-                    confirmButton = mView.findViewById(R.id.add_item_dialog_confirm);
-                    cancelButton = mView.findViewById(R.id.add_item_dialog_cancel);
-                    checkButton = mView.findViewById(R.id.add_item_dialog_check_barcode);
-
-                    cancelButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            addItemConfirm.dismiss();
-                        }
-                    });
-
-                    checkButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            String barcodeString = itemBarcode.getText().toString();
-
-                            if (barcodeString.matches("") || barcodeString.matches("[^0-9]")){
-                                Toast.makeText(thisHome, R.string.invalid_barcode, Toast.LENGTH_LONG).show();
-                            }
-                            else{
-                                addItemDialogHandler(barcodeString, categorySpinner, subCategorySpinner, false);
-                            }
-                        }
-                    });
-
-                    confirmButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            //Get barcode from text box
-                            final String barcodeString = itemBarcode.getText().toString();
-
-                            if (barcodeString.matches("") || barcodeString.matches("[^0-9]")){
-                                Toast.makeText(thisHome, R.string.invalid_barcode, Toast.LENGTH_LONG).show();
-                            }
-                            else{
-                                addItemDialogHandler(barcodeString, categorySpinner, subCategorySpinner, false);
-
-                                updateItemData(categorySpinner, subCategorySpinner, barcodeString);
-
-                                if (((String)thisHome.data.get("item_name")).matches("")){
-                                    addItemConfirm.dismiss();
-                                    return;
-                                }
-                                try{
-                                    if (thisHome.data.get("item_quantity").toString().matches("") ||
-                                            thisHome.data.get("item_quantity").toString().matches("[^0-9]")){
-                                        addItemConfirm.dismiss();
-                                        return;
-                                    }
-                                }catch (Exception e){
-                                    Log.e(TAG, "Caught exception: " + e);
-                                }
-
-                                firebaseHandler.updateItemTimestamp(barcodeString);
-
-                                //Push data to database
-                                if (nextItemIsNew){
-                                    firebaseHandler.pushNewItem(barcodeString, data);
-                                }
-                                else{
-                                    firebaseHandler.updateItem(barcodeString, data);
-                                }
-
-                                addItemConfirm.dismiss();
-                            }
-                        }
-                    });
-
-                    final Handler h = new Handler();
-                    h.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            mBuilder.setView(mView);
-                            addItemConfirm = mBuilder.create();
-                            addItemConfirm.show();
-                        }
-                    }, 100);
-                }
-            });
+            uiHandler.createAddItemByHandDialog();
         }
     }
 
@@ -783,7 +618,7 @@ public class Home extends AppCompatActivity
 
 
 
-    private void addItemDialogHandler(final String barcode, final Spinner categorySpinner, final Spinner subCategorySpinner, final boolean byHand) {
+    protected void addItemDialogHandler(final String barcode, final Spinner categorySpinner, final Spinner subCategorySpinner, final boolean byHand) {
         /*---------NEW CODE-------------*/
         if (networkHandler.isNetworkConnected()){
             db.collection("users").document(user.getUid())
@@ -855,7 +690,7 @@ public class Home extends AppCompatActivity
 
 
 
-    private void updateEditTextFields(DocumentSnapshot documentSnapshot, Spinner categorySpinner, Spinner subCategorySpinner) {
+    protected void updateEditTextFields(DocumentSnapshot documentSnapshot, Spinner categorySpinner, Spinner subCategorySpinner) {
         itemBarcode.setText(documentSnapshot.getId());
         itemName.setText((String)documentSnapshot.get("item_name"));
         itemQuantity.setText(String.valueOf(documentSnapshot.get("item_quantity")));
@@ -870,7 +705,7 @@ public class Home extends AppCompatActivity
 
 
 
-    private void updateItemData(Spinner categorySpinner, Spinner subCategorySpinner, String barcode) {
+    protected void updateItemData(Spinner categorySpinner, Spinner subCategorySpinner, String barcode) {
         data = new HashMap<>();
 
         data.put("item_quantity", "");
